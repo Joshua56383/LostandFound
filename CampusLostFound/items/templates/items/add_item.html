@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Report Item</title>
+<meta charset="utf-8">
+
+<style>
+/* ===============================
+   THEME VARIABLES
+   =============================== */
+:root{
+    --primary:#3b82f6;
+    --primary-dark:#2563eb;
+    --bg:#f8fafc;
+    --card:#ffffff;
+    --text:#1e293b;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --radius:14px;
+    --shadow:0 10px 28px rgba(0,0,0,0.06);
+    --transition:all .25s ease;
+}
+
+/* ===============================
+   GLOBAL
+   =============================== */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Inter,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:24px;
+}
+
+/* ===============================
+   CARD CONTAINER
+   =============================== */
+.card{
+    max-width:720px;
+    margin:auto;
+    background:var(--card);
+    padding:32px;
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    animation:fadeIn .4s ease;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(10px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+/* ===============================
+   TITLE
+   =============================== */
+.title{
+    text-align:center;
+    font-size:28px;
+    font-weight:700;
+    margin-bottom:24px;
+}
+
+/* ===============================
+   FORM STYLING
+   =============================== */
+
+/* NOTE:
+   Django's {{ form.as_p }} renders
+   fields inside <p> tags.
+   We style those tags directly
+   to keep backend untouched.
+*/
+
+form p{
+    margin-bottom:18px;
+    display:flex;
+    flex-direction:column;
+    font-size:14px;
+}
+
+form label{
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--muted);
+}
+
+form input,
+form select,
+form textarea{
+    padding:12px;
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    font-size:14px;
+    transition:var(--transition);
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus{
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* ===============================
+   SUBMIT BUTTON
+   =============================== */
+.btn{
+    display:inline-block;
+    margin-top:10px;
+    padding:12px 18px;
+    background:var(--primary);
+    color:white;
+    border:none;
+    border-radius:var(--radius);
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    transition:var(--transition);
+}
+
+.btn:hover{
+    background:var(--primary-dark);
+    transform:translateY(-2px);
+}
+
+/* ===============================
+   BACK LINK
+   =============================== */
+.back{
+    margin-top:24px;
+    text-align:center;
+}
+
+.back a{
+    color:var(--primary);
+    text-decoration:none;
+    font-weight:600;
+}
+
+.back a:hover{
+    text-decoration:underline;
+}
+
+/* ===============================
+   MOBILE
+   =============================== */
+@media(max-width:600px){
+    body{padding:16px}
+    .card{padding:24px}
+    .title{font-size:22px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h1 class="title">
+{% if report_type %}
+Report {{ report_type|capfirst }} Item
+{% else %}
+Report Lost / Found Item
+{% endif %}
+</h1>
+
+<form method="POST">
+{% csrf_token %}
+{{ form.as_p }}
+
+<button type="submit" class="btn">Submit</button>
+</form>
+
+<div class="back">
+<a href="{% url 'items:item_list' %}">← Back to list</a>
+</div>
+
+</div>
+
+</body>
+</html>
