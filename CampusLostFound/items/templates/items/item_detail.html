@@ -1,208 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>{{ item.name }} - Details</title>
+{% extends 'items/base.html' %}
+{% load static %}
 
-<style>
-/* ===============================
-   CSS VARIABLES (Modern Theme)
-   =============================== */
-:root{
-    --primary:#3b82f6;
-    --primary-dark:#2563eb;
-    --bg:#f8fafc;
-    --card:#ffffff;
-    --text:#1e293b;
-    --muted:#64748b;
-    --border:#e2e8f0;
-    --radius:14px;
-    --shadow:0 10px 28px rgba(0,0,0,0.06);
-    --transition:all .25s ease;
-}
+{% block title %}{{ item.name }} - Retrace{% endblock %}
 
-/* ===============================
-   GLOBAL RESET
-   =============================== */
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    font-family: Inter, "Segoe UI", sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    padding:24px;
-}
-
-/* ===============================
-   MAIN CARD CONTAINER
-   =============================== */
-.container{
-    max-width:720px;
-    margin:auto;
-    background:var(--card);
-    padding:32px;
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    animation:fadeIn .4s ease;
-}
-
-/* subtle entrance animation */
-@keyframes fadeIn{
-    from{opacity:0;transform:translateY(10px);}
-    to{opacity:1;transform:translateY(0);}
-}
-
-/* ===============================
-   TITLE
-   =============================== */
-.title{
-    text-align:center;
-    font-size:28px;
-    font-weight:700;
-    margin-bottom:18px;
-}
-
-/* ===============================
-   IMAGE PREVIEW
-   =============================== */
-.image-box{
-    width:100%;
-    max-height:300px;
-    overflow:hidden;
-    border-radius:12px;
-    margin-bottom:20px;
-    background:#f1f5f9;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.image-box img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-
-/* ===============================
-   INFO LIST
-   =============================== */
-.info{
-    display:grid;
-    gap:10px;
-    margin-bottom:18px;
-}
-
-.label{
-    font-weight:600;
-    color:var(--muted);
-}
-
-.value{
-    margin-left:6px;
-    color:var(--text);
-}
-
-/* ===============================
-   STATUS BADGE
-   =============================== */
-.status{
-    display:inline-block;
-    padding:6px 12px;
-    border-radius:999px;
-    font-size:13px;
-    font-weight:600;
-    background:#e0f2fe;
-    color:#0369a1;
-}
-
-/* ===============================
-   CONTACT BOX
-   =============================== */
-.contact-box{
-    margin-top:20px;
-    padding:18px;
-    border-radius:var(--radius);
-    background:#f1f5f9;
-    border:1px solid var(--border);
-}
-
-.contact-title{
-    font-weight:600;
-    margin-bottom:10px;
-}
-
-/* ===============================
-   BACK BUTTON
-   =============================== */
-.back-link{
-    display:inline-block;
-    margin-top:25px;
-    padding:12px 18px;
-    border-radius:var(--radius);
-    background:var(--primary);
-    color:white;
-    text-decoration:none;
-    font-size:14px;
-    font-weight:600;
-    transition:var(--transition);
-}
-
-.back-link:hover{
-    background:var(--primary-dark);
-    transform:translateY(-2px);
-}
-
-/* ===============================
-   MOBILE RESPONSIVE
-   =============================== */
-@media(max-width:600px){
-    body{padding:16px}
-    .container{padding:24px}
-    .title{font-size:22px}
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<h1 class="title">{{ item.name }}</h1>
-
-{% if item.image_url %}
-<div class="image-box">
-    <img src="{{ item.image_url }}" alt="{{ item.name }}">
-</div>
-{% endif %}
-
-<div class="info">
-    <div><span class="label">Category:</span><span class="value">{{ item.category|default:'—' }}</span></div>
-    <div><span class="label">Location:</span><span class="value">{{ item.location }}</span></div>
-    <div><span class="label">Description:</span><span class="value">{{ item.description }}</span></div>
-    <div><span class="label">Date Reported:</span><span class="value">{{ item.date_reported }}</span></div>
-    <div>
-        <span class="label">Status:</span>
-        <span class="status">{{ item.get_status_display }}</span>
+{% block content %}
+<div class="profile-container" style="max-width: 800px;">
+    <!-- Brand / Back Navigation -->
+    <div class="mb-6">
+        <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 6px 14px; font-size: 13px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Browse
+        </a>
     </div>
+
+    <!-- Main Detail Card -->
+    <div class="card-modern" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+        <!-- Hero Image -->
+        {% if item.image %}
+        <div style="width: 100%; height: 400px; background: #f1f5f9; position: relative;">
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; top: 16px; left: 16px;">
+                <span class="badge {% if item.status == 'lost' %}badge-orange{% else %}badge-green{% endif %}"
+                    style="padding: 6px 12px; font-size: 12px; box-shadow: var(--shadow-md);">
+                    {{ item.get_status_display }}
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div
+            style="width: 100%; height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: var(--text-muted); border-bottom: 1px solid var(--border);">
+            <div class="text-center">
+                <i data-lucide="image" style="width: 48px; height: 48px; margin-bottom: 8px;"></i>
+                <p style="font-size: 14px;">No image available</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="padding: 32px;">
+            <div class="flex-between mb-4">
+                <h1 style="font-size: 2.25rem; letter-spacing: -0.02em;">{{ item.name }}</h1>
+                <div class="badge badge-blue" style="border-radius: 6px;">{{ item.category|default:"General" }}</div>
+            </div>
+
+            <p style="font-size: 1.125rem; color: var(--text-muted); margin-bottom: 32px; line-height: 1.7;">
+                {{ item.description }}
+            </p>
+
+            <!-- Metadata Grid -->
+            <div
+                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <div>
+                    <div class="form-label" style="text-transform: uppercase;">Location</div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i data-lucide="map-pin" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                        {{ item.location }}
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="text-transform: uppercase;">Reported Date</div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                        {{ item.date_reported|date:"F d, Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    {% if item.contact_name or item.contact_email %}
+    <div class="card-modern" style="border-left: 4px solid var(--primary);">
+        <h3 class="mb-4" style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="user-check" style="width: 20px; height: 20px; color: var(--primary);"></i>
+            Contact Information
+        </h3>
+        <div style="display: flex; gap: 32px;">
+            {% if item.contact_name %}
+            <div>
+                <div class="form-label">Name</div>
+                <div style="font-weight: 600;">{{ item.contact_name }}</div>
+            </div>
+            {% endif %}
+            {% if item.contact_email %}
+            <div>
+                <div class="form-label">Email Address</div>
+                <a href="mailto:{{ item.contact_email }}"
+                    style="font-weight: 600; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    {{ item.contact_email }}
+                    <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-{% if item.contact_name or item.contact_email %}
-<div class="contact-box">
-    <div class="contact-title">Contact Information</div>
-    <div>{{ item.contact_name }}</div>
-    <div>{{ item.contact_email }}</div>
-</div>
-{% endif %}
-
-<a href="{% url 'items:item_list' %}" class="back-link">
-⬅ Back to List
-</a>
-
-</div>
-
-</body>
-</html>
+{% endblock %}

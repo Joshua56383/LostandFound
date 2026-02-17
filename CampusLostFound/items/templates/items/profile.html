@@ -1,0 +1,135 @@
+{% extends 'items/base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Retrace{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Profile Hero Card -->
+    <div class="card-modern" style="margin-bottom: 32px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
+                {% if user.profile.profile_picture %}
+                <div style="margin-bottom: 16px; position: relative;">
+                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" 
+                        style="width: 80px; height: 80px; border-radius: 16px; object-fit: cover; border: 3px solid var(--primary);">
+                </div>
+                {% else %}
+                <div class="avatar-ring" style="margin-bottom: 16px;">
+                    <div class="avatar-inner">
+                        {{ user.username|make_list|first|upper }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <h1 style="font-size: 1.5rem; font-weight: 700;">{{ user.username }}</h1>
+                    <span class="badge badge-green">
+                        <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                        Verified
+                    </span>
+                </div>
+                <p
+                    style="color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 6px; justify-content: center;">
+                    <i data-lucide="mail" style="width: 14px; height: 14px;"></i>
+                    {{ user.email }}
+                </p>
+                <p style="color: var(--muted); font-size: 12px; margin-top: 4px;">
+                    Member since {{ user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 12px; width: 100%; justify-content: center;">
+                <a href="{% url 'items:edit_profile' %}" class="btn btn-primary" style="flex: 1; max-width: 160px;">
+                    <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
+                    Edit Profile
+                </a>
+                <form action="{% url 'logout' %}" method="post" style="flex: 1; max-width: 160px;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn"
+                        style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border);">
+            <div style="text-align: center;">
+                <div style="font-size: 1.25rem; font-weight: 700;">{{ user_items.count }}</div>
+                <div
+                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
+                    Total Posts</div>
+            </div>
+            <div
+                style="text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <div style="font-size: 1.25rem; font-weight: 700;">0</div>
+                <div
+                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
+                    Returned</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.25rem; font-weight: 700;">98%</div>
+                <div
+                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
+                    Trust Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listings Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <h2 style="font-size: 1.125rem; font-weight: 700;">My Listings</h2>
+        <a href="{% url 'items:add_item' %}" class="btn btn-light" style="font-size: 13px;">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            New Listing
+        </a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for item in user_items %}
+        <a href="{% url 'items:item_detail' item.pk %}" class="listing-item">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="listing-img">
+            {% else %}
+            <div class="listing-img"
+                style="display: flex; align-items: center; justify-content: center; color: var(--muted);">
+                <i data-lucide="package" style="width: 32px; height: 32px;"></i>
+            </div>
+            {% endif %}
+
+            <div class="listing-content">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span
+                        class="badge {% if item.status == 'lost' %}badge-orange{% elif item.status == 'found' %}badge-green{% else %}badge-blue{% endif %}">
+                        {{ item.status|title }}
+                    </span>
+                    <span style="color: var(--muted); font-size: 12px;">•</span>
+                    <span style="color: var(--muted); font-size: 12px;">{{ item.date_reported|date:"M d, Y" }}</span>
+                </div>
+                <h3 class="listing-title">{{ item.name }}</h3>
+                <p style="color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 4px;">
+                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                    {{ item.location }}
+                </p>
+            </div>
+
+            <i data-lucide="chevron-right" style="color: var(--border); width: 20px; height: 20px;"></i>
+        </a>
+        {% empty %}
+        <div
+            style="text-align: center; padding: 48px; border: 2px dashed var(--border); border-radius: var(--radius); color: var(--muted);">
+            <div
+                style="background: var(--bg); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <i data-lucide="package" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h3 style="font-weight: 600; color: var(--text);">No items found</h3>
+            <p style="font-size: 14px;">You haven't reported any items yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

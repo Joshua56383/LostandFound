@@ -1,0 +1,120 @@
+{% extends 'items/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Retrace{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="mb-2">Overview</h1>
+    <p class="text-muted">Welcome back, {{ user.username }}. Here's what's happening today.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Items</div>
+        <div class="stat-value" style="color: var(--primary);">{{ total_items }}</div>
+        <div class="mt-2" style="font-size: 12px; color: var(--text-muted);">All time reports</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Found</div>
+        <div class="stat-value" style="color: var(--success);">{{ found_count }}</div>
+        <div class="mt-2" style="font-size: 12px; color: var(--text-muted);">Reunited items</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Lost</div>
+        <div class="stat-value" style="color: var(--danger);">{{ lost_count }}</div>
+        <div class="mt-2" style="font-size: 12px; color: var(--text-muted);">Currently missing</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Claimed</div>
+        <div class="stat-value" style="color: var(--secondary);">{{ claimed_count }}</div>
+        <div class="mt-2" style="font-size: 12px; color: var(--text-muted);">Successful claims</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Chart Section -->
+    <div class="card-modern">
+        <div class="flex-between mb-8">
+            <h3 style="font-size: 1.1rem;">Analytics</h3>
+            <div class="badge badge-blue">Last 30 Days</div>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="itemsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card-modern">
+        <div class="flex-between mb-8">
+            <h3 style="font-size: 1.1rem;">Recent Activity</h3>
+            <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 4px 12px; font-size: 12px;">View
+                All</a>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for item in recent_items %}
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <div
+                    style="width: 36px; height: 36px; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="clock" style="width: 18px; height: 18px;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 13px; font-weight: 600;">{{ item.name }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ item.status|title }} • {{
+                        item.date_reported|timesince }} ago</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8">
+                <p class="text-muted">No recent activity.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('itemsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Lost', 'Found', 'Claimed'],
+                datasets: [{
+                    label: 'Items Count',
+                    data: [{{ lost_count }}, {{ found_count }}, {{ claimed_count }}],
+        backgroundColor: [
+        'rgba(239, 68, 68, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(79, 70, 229, 0.8)'
+    ],
+        borderRadius: 8,
+        borderSkipped: false,
+        barThickness: 40
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { display: false },
+                ticks: { font: { family: 'Inter', size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { family: 'Inter', size: 11, weight: '600' } }
+            }
+        }
+    }
+        });
+    });
+</script>
+{% endblock %}

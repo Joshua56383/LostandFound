@@ -1,0 +1,11 @@
+﻿Creating test database for alias 'default'...
+System.Management.Automation.RemoteException
+........
+----------------------------------------------------------------------
+Ran 8 tests in 5.268s
+System.Management.Automation.RemoteException
+OK
+Destroying test database for alias 'default'...
+System.Management.Automation.RemoteException
+Found 8 test(s).
+System check identified no issues (0 silenced).

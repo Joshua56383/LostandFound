@@ -1,4 +1,9 @@
 from django.contrib import admin
-from .models import Item
+from . import models
 
-admin.site.register(Item)
+admin.site.register(models.Item)
+admin.site.register(models.UserLoginLog)
+
+# Register UserProfile if it exists
+if hasattr(models, 'UserProfile'):
+    admin.site.register(models.UserProfile)

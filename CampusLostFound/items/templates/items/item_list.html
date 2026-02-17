@@ -1,320 +1,155 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Campus Lost & Found</title>
+{% extends 'items/base.html' %}
+{% load static %}
 
-<style>
-/* ===============================
-   CSS VARIABLES (Modern Palette)
-   =============================== */
-:root{
-    --primary:#3b82f6;
-    --primary-dark:#2563eb;
-    --bg:#f8fafc;
-    --card:#ffffff;
-    --text:#1e293b;
-    --muted:#64748b;
-    --border:#e2e8f0;
-    --radius:12px;
-    --shadow:0 8px 24px rgba(0,0,0,0.06);
-    --transition:all .25s ease;
-}
+{% block title %}Browse Items - Retrace{% endblock %}
 
-/* ===============================
-   GLOBAL
-   =============================== */
-*{margin:0;padding:0;box-sizing:border-box;}
-
-body{
-    font-family: Inter, "Segoe UI", sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    padding:24px;
-}
-
-/* ===============================
-   TYPOGRAPHY
-   =============================== */
-h1{
-    text-align:center;
-    font-weight:700;
-    margin-bottom:6px;
-}
-
-.subtitle{
-    text-align:center;
-    color:var(--muted);
-    margin-bottom:22px;
-}
-
-/* ===============================
-   BUTTONS
-   =============================== */
-.btn{
-    padding:11px 18px;
-    border-radius:var(--radius);
-    border:none;
-    cursor:pointer;
-    font-size:14px;
-    font-weight:600;
-    transition:var(--transition);
-    text-decoration:none;
-    display:inline-block;
-}
-
-.btn-primary{
-    background:var(--primary);
-    color:white;
-}
-.btn-primary:hover{
-    background:var(--primary-dark);
-    transform:translateY(-2px);
-}
-
-.btn-light{
-    background:#f1f5f9;
-    color:#334155;
-}
-.btn-light:hover{
-    background:#e2e8f0;
-}
-
-/* ===============================
-   CONTAINERS
-   =============================== */
-.container{
-    max-width:1100px;
-    margin:auto;
-}
-
-.center{
-    text-align:center;
-    margin-bottom:22px;
-}
-
-/* ===============================
-   ALERT MESSAGES
-   =============================== */
-.alert{
-    background:#dcfce7;
-    color:#166534;
-    padding:12px;
-    border-radius:var(--radius);
-    margin-bottom:10px;
-    box-shadow:var(--shadow);
-}
-
-/* ===============================
-   SEARCH BAR
-   =============================== */
-.search-bar{
-    display:flex;
-    gap:10px;
-    margin-bottom:18px;
-    flex-wrap:wrap;
-}
-
-.input, select{
-    padding:11px;
-    border-radius:var(--radius);
-    border:1px solid var(--border);
-    font-size:14px;
-    background:white;
-    transition:var(--transition);
-}
-
-.input:focus, select:focus{
-    outline:none;
-    border-color:var(--primary);
-    box-shadow:0 0 0 3px rgba(59,130,246,.15);
-}
-
-.flex-1{flex:1}
-
-/* ===============================
-   TABS
-   =============================== */
-.tabs{
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
-}
-
-.tab{
-    flex:1;
-    text-align:center;
-    padding:11px;
-    border-radius:var(--radius);
-    text-decoration:none;
-    font-weight:600;
-    border:1px solid var(--border);
-    color:var(--text);
-    transition:var(--transition);
-    background:white;
-}
-
-.tab.active{
-    background:var(--primary);
-    color:white;
-    border-color:var(--primary);
-}
-
-.tab:hover{
-    transform:translateY(-2px);
-}
-
-/* ===============================
-   GRID CARDS
-   =============================== */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-    gap:18px;
-}
-
-.card{
-    background:var(--card);
-    padding:15px;
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    transition:var(--transition);
-}
-
-.card:hover{
-    transform:translateY(-5px);
-}
-
-.card img{
-    width:100%;
-    height:140px;
-    object-fit:cover;
-    border-radius:10px;
-    margin-bottom:10px;
-}
-
-.card h3{
-    margin-bottom:6px;
-}
-
-.meta{
-    font-size:13px;
-    color:var(--muted);
-    margin-top:6px;
-}
-
-.actions{
-    margin-top:12px;
-    display:flex;
-    gap:8px;
-}
-
-.empty{
-    text-align:center;
-    grid-column:1/-1;
-    padding:50px 0;
-    color:var(--muted);
-}
-
-/* ===============================
-   MOBILE
-   =============================== */
-@media(max-width:600px){
-    body{padding:16px}
-    .tabs{flex-direction:column}
-}
-</style>
-</head>
-
-<body>
-
-<header class="container">
-    <h1>Campus Lost & Found</h1>
-    <p class="subtitle">Help reunite lost items with their owners</p>
-
-    <div class="center">
-        <a class="btn btn-primary" href="{% url 'items:report_item' 'lost' %}">➕ Report Lost Item</a>
-        <a class="btn btn-primary" href="{% url 'items:report_item' 'found' %}">➕ Report Found Item</a>
+{% block content %}
+<div class="mb-8">
+    <div class="flex-between mb-4">
+        <div>
+            <h1 class="mb-1">Browse Items</h1>
+            <p class="text-muted">Explore reported lost and found items in your campus.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'items:report_item' 'lost' %}" class="btn btn-outline"
+                style="border-color: #fbd5d5; color: #9b1c1c;">
+                <i data-lucide="minus-circle" style="width: 18px; height: 18px;"></i>
+                Report Lost
+            </a>
+            <a href="{% url 'items:report_item' 'found' %}" class="btn btn-primary">
+                <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+                Report Found
+            </a>
+        </div>
     </div>
-</header>
 
-<!-- Messages -->
-<div class="container">
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert">{{ message }}</div>
+    <!-- Modern Filter Bar -->
+    <div class="card-modern" style="padding: 16px;">
+        <form method="get"
+            style="display: grid; grid-template-columns: 1fr 200px 200px 120px; gap: 12px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Search</label>
+                <div style="position: relative;">
+                    <i data-lucide="search"
+                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+                    <input class="input" type="text" name="q" placeholder="What are you looking for?" value="{{ q }}"
+                        style="padding-left: 36px;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Category</label>
+                <select name="category" class="input">
+                    <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Location</label>
+                <select name="location" class="input">
+                    <option value="all" {% if location == 'all' %}selected{% endif %}>All Locations</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <button class="btn btn-primary" style="height: 42px;">Apply</button>
+        </form>
+    </div>
+</div>
+
+<!-- Category Tabs -->
+<div
+    style="display: flex; gap: 4px; margin-bottom: 24px; background: #f1f5f9; padding: 4px; border-radius: 10px; width: fit-content;">
+    <a href="?tab=all&category={{ category }}&location={{ location }}&q={{ q }}"
+        class="btn {% if tab == 'all' %}btn-primary{% else %}btn-light{% endif %}"
+        style="padding: 6px 16px; border-radius: 8px; {% if tab != 'all' %}background: transparent; color: var(--text-muted);{% endif %}">
+        All
+    </a>
+    <a href="?tab=lost&category={{ category }}&location={{ location }}&q={{ q }}"
+        class="btn {% if tab == 'lost' %}btn-primary{% else %}btn-light{% endif %}"
+        style="padding: 6px 16px; border-radius: 8px; {% if tab != 'lost' %}background: transparent; color: var(--text-muted);{% endif %}">
+        Lost
+    </a>
+    <a href="?tab=found&category={{ category }}&location={{ location }}&q={{ q }}"
+        class="btn {% if tab == 'found' %}btn-primary{% else %}btn-light{% endif %}"
+        style="padding: 6px 16px; border-radius: 8px; {% if tab != 'found' %}background: transparent; color: var(--text-muted);{% endif %}">
+        Found
+    </a>
+</div>
+
+<!-- Items Listing -->
+<div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for item in items %}
+    <a href="{% url 'items:item_detail' item.pk %}" class="listing-item">
+        {% if item.image %}
+        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="listing-img">
+        {% else %}
+        <div class="listing-img"
+            style="display: flex; align-items: center; justify-content: center; color: var(--text-muted); background: #f8fafc; border: 1px dashed var(--border);">
+            <i data-lucide="package" style="width: 24px; height: 24px;"></i>
+        </div>
+        {% endif %}
+
+        <div class="listing-content">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span class="badge {% if item.status == 'lost' %}badge-orange{% else %}badge-green{% endif %}">
+                    {{ item.get_status_display }}
+                </span>
+                <span style="color: var(--border);">/</span>
+                <span style="font-size: 12px; color: var(--text-muted);">{{ item.category|default:"Other" }}</span>
+            </div>
+            <h3 class="listing-title">{{ item.name }}</h3>
+            <div style="display: flex; gap: 16px; margin-top: 4px;">
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-muted);">
+                    <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                    {{ item.location }}
+                </span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-muted);">
+                    <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                    {{ item.date_reported|date:"M d, Y" }}
+                </span>
+            </div>
+        </div>
+
+        <div class="btn btn-light" style="padding: 8px; border-radius: 50%;">
+            <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+        </div>
+    </a>
+    {% empty %}
+    <div class="card-modern py-12 text-center" style="border-style: dashed;">
+        <i data-lucide="search-x" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>
+        <h3>No items found</h3>
+        <p class="text-muted">Try adjusting your filters or search keywords.</p>
+        <div class="mt-4">
+            <a href="{% url 'items:item_list' %}" class="btn btn-light">Clear All Filters</a>
+        </div>
+    </div>
     {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if items.has_other_pages %}
+<div class="mt-8 flex-between">
+    <p class="text-muted" style="font-size: 14px;">
+        Showing {{ items.start_index }}-{{ items.end_index }} of {{ items.paginator.count }} items
+    </p>
+    <div style="display: flex; gap: 8px;">
+        {% if items.has_previous %}
+        <a href="?page={{ items.previous_page_number }}&q={{ q }}&category={{ category }}&location={{ location }}&tab={{ tab }}"
+            class="btn btn-outline">Previous</a>
+        {% endif %}
+
+        {% if items.has_next %}
+        <a href="?page={{ items.next_page_number }}&q={{ q }}&category={{ category }}&location={{ location }}&tab={{ tab }}"
+            class="btn btn-outline">Next</a>
+        {% endif %}
+    </div>
+</div>
 {% endif %}
-</div>
-
-<!-- Search -->
-<form method="get" class="container search-bar">
-    <input class="input flex-1" type="text" name="q" placeholder="Search items..." value="{{ q }}">
-
-    <select name="category">
-        <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
-        {% for cat in categories %}
-        <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
-        {% endfor %}
-    </select>
-
-    <select name="location">
-        <option value="all" {% if location == 'all' %}selected{% endif %}>All Locations</option>
-        {% for loc in locations %}
-        <option value="{{ loc }}" {% if location == loc %}selected{% endif %}>{{ loc }}</option>
-        {% endfor %}
-    </select>
-
-    <input type="hidden" name="tab" value="{{ tab }}">
-    <button class="btn btn-primary">Search</button>
-</form>
-
-<!-- Tabs -->
-<div class="container tabs">
-<a class="tab {% if tab == 'all' %}active{% endif %}"
-   href="?tab=all&category={{ category }}&location={{ location }}&q={{ q }}">
-   All ({{ total_count }})
-</a>
-
-<a class="tab {% if tab == 'lost' %}active{% endif %}"
-   href="?tab=lost&category={{ category }}&location={{ location }}&q={{ q }}">
-   Lost ({{ lost_count }})
-</a>
-
-<a class="tab {% if tab == 'found' %}active{% endif %}"
-   href="?tab=found&category={{ category }}&location={{ location }}&q={{ q }}">
-   Found ({{ found_count }})
-</a>
-</div>
-
-<!-- Cards -->
-<div class="container grid">
-{% for item in items %}
-<div class="card">
-
-{% if item.image_url %}
-<img src="{{ item.image_url }}" alt="{{ item.name }}">
-{% endif %}
-
-<h3>{{ item.name }}</h3>
-
-<p class="meta">{{ item.description }}</p>
-
-<p class="meta"><strong>Category:</strong> {{ item.category|default:'—' }}</p>
-<p class="meta"><strong>Location:</strong> {{ item.location }}</p>
-<p class="meta"><strong>Status:</strong> {{ item.get_status_display }}</p>
-<p class="meta">Reported: {{ item.date_reported }}</p>
-
-<div class="actions">
-<a class="btn btn-primary" href="{% url 'items:item_detail' item.pk %}">View</a>
-<a class="btn btn-light" href="{% url 'items:report_item' 'found' %}?q={{ item.name }}">Similar</a>
-</div>
-
-</div>
-{% empty %}
-<p class="empty">No items found matching your criteria.</p>
-{% endfor %}
-</div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'items/base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile - Retrace{% endblock %}
+
+{% block content %}
+<div class="profile-container" style="max-width: 600px;">
+    <div class="mb-6">
+        <a href="{% url 'items:profile' %}" class="btn btn-light" style="padding: 6px 14px; font-size: 13px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Profile
+        </a>
+    </div>
+
+    <div class="card-modern">
+        <div class="mb-8" style="display: flex; align-items: center; gap: 16px;">
+            <div
+                style="width: 56px; height: 56px; border-radius: 16px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="settings" style="width: 28px; height: 28px;"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 1.5rem; margin-bottom: 2px;">Account Settings</h1>
+                <p class="text-muted" style="font-size: 14px;">Update your personal information and preferences.</p>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                {% for field in form %}
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                        {% if field.name == 'username' %}<i data-lucide="user" style="width: 14px; height: 14px;"></i>{% endif %}
+                        {% if field.name == 'email' %}<i data-lucide="mail" style="width: 14px; height: 14px;"></i>{% endif %}
+                        {% if 'first_name' in field.name %}<i data-lucide="info" style="width: 14px; height: 14px;"></i>{% endif %}
+                        {% if 'last_name' in field.name %}<i data-lucide="info" style="width: 14px; height: 14px;"></i>{% endif %}
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="mt-1" style="font-size: 11px; color: var(--text-muted);">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                    <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ field.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <!-- Profile Picture Upload -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="image" style="width: 14px; height: 14px;"></i>
+                        Profile Picture
+                    </label>
+                    {% if user.profile.profile_picture %}
+                    <div style="margin-bottom: 12px;">
+                        <img src="{{ user.profile.profile_picture.url }}" alt="Profile" style="width: 100px; height: 100px; border-radius: 12px; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                    {{ profile_form.profile_picture }}
+                    {% if profile_form.profile_picture.help_text %}
+                    <p class="mt-1" style="font-size: 11px; color: var(--text-muted);">{{ profile_form.profile_picture.help_text }}</p>
+                    {% endif %}
+                    {% if profile_form.profile_picture.errors %}
+                    <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ profile_form.profile_picture.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 32px; display: flex; gap: 12px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    Save Changes
+                </button>
+                <a href="{% url 'items:profile' %}" class="btn btn-light" style="padding: 10px 24px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-8 text-center">
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline" style="border-color: #fbd5d5; color: #9b1c1c; width: 100%;">
+                <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+                Sign Out of Account
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
