@@ -1,74 +1,52 @@
 {% extends 'items/base.html' %}
 {% load static %}
 
-{% block title %}Report Item - Retrace{% endblock %}
+{% block title %}Report {% if report_type == 'lost' %}Lost{% else %}Found{% endif %} Item{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 0 auto;">
-    <div class="mb-6">
-        <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 6px 14px; font-size: 13px;">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-            Back to Browse
-        </a>
-    </div>
+<div class="max-w-3xl mx-auto px-4 py-12">
+    <button onclick="window.history.back()" class="flex items-center gap-2 text-sm font-bold text-gray-500 mb-8"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
 
-    <div class="card-modern">
-        <div class="flex-between mb-8 pb-4" style="border-bottom: 1px solid var(--border);">
-            <div>
-                <h1 style="font-size: 1.5rem; margin-bottom: 4px;">
-                    {% if report_type %}
-                    Report {{ report_type|capfirst }} Item
-                    {% else %}
-                    Report Item
-                    {% endif %}
-                </h1>
-                <p class="text-muted" style="font-size: 14px;">Please provide as much detail as possible.</p>
-            </div>
-            <div
-                style="width: 48px; height: 48px; border-radius: 12px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center;">
-                <i data-lucide="clipboard-list" style="width: 24px; height: 24px;"></i>
-            </div>
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div class="{% if report_type == 'lost' %}bg-red-500{% else %}bg-emerald-500{% endif %} px-10 py-10 text-white">
+            <h2 class="text-3xl font-extrabold">Report {% if report_type == 'lost' %}Lost{% else %}Found{% endif %} Item</h2>
+            <p class="text-white/80 mt-1 font-medium italic">Please provide clear details.</p>
         </div>
 
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" class="p-10 space-y-8">
             {% csrf_token %}
+            <input type="hidden" name="status" value="{{ report_type|default:'lost' }}">
 
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                {% for field in form %}
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
-                        {% if field.name == 'name' %}<i data-lucide="tag" style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'category' %}<i data-lucide="layers"
-                            style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'location' %}<i data-lucide="map-pin"
-                            style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'description' %}<i data-lucide="align-left"
-                            style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'image' %}<i data-lucide="image" style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'contact_name' %}<i data-lucide="user"
-                            style="width: 14px; height: 14px;"></i>{% endif %}
-                        {% if field.name == 'contact_email' %}<i data-lucide="mail"
-                            style="width: 14px; height: 14px;"></i>{% endif %}
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                    {% if field.help_text %}
-                    <p class="mt-1" style="font-size: 11px; color: var(--text-muted);">{{ field.help_text }}</p>
-                    {% endif %}
-                    {% if field.errors %}
-                    <div style="color: var(--danger); font-size: 12px; margin-top: 4px;">{{ field.errors|striptags }}
+            <div class="space-y-6">
+                <div><label class="block text-sm font-bold text-gray-700">Item Name</label><input type="text" name="name" required value="{{ form.name.value|default:'' }}" class="w-full px-5 py-3.5 rounded-xl border bg-gray-50 font-medium" /></div>
+                <div><label class="block text-sm font-bold text-gray-700">Description</label><textarea name="description" required rows="4" class="w-full px-5 py-3.5 rounded-xl border bg-gray-50 font-medium">{{ form.description.value|default:'' }}</textarea></div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700">Category</label>
+                        <select name="category" required class="w-full px-5 py-3.5 rounded-xl border bg-gray-50 font-medium">
+                            <option value="Electronics" {% if form.category.value == "Electronics" %}selected{% endif %}>Electronics</option>
+                            <option value="Accessories" {% if form.category.value == "Accessories" %}selected{% endif %}>Accessories</option>
+                            <option value="Other" {% if form.category.value == "Other" %}selected{% endif %}>Other</option>
+                        </select>
                     </div>
-                    {% endif %}
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700">Location</label>
+                        <select name="location" required class="w-full px-5 py-3.5 rounded-xl border bg-gray-50 font-medium">
+                            <option value="Library" {% if form.location.value == "Library" %}selected{% endif %}>Library</option>
+                            <option value="Cafeteria" {% if form.location.value == "Cafeteria" %}selected{% endif %}>Cafeteria</option>
+                            <option value="Dormitory" {% if form.location.value == "Dormitory" %}selected{% endif %}>Dormitory</option>
+                        </select>
+                    </div>
                 </div>
-                {% endfor %}
             </div>
 
-            <div
-                style="margin-top: 32px; display: flex; gap: 12px; padding-top: 24px; border-top: 1px solid var(--border);">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
-                    Submit Report
-                </button>
-                <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 10px 24px;">Cancel</a>
+            <div class="pt-8 flex justify-end gap-3">
+                <a href="{% url 'items:item_list' %}" class="px-8 py-3.5 rounded-xl font-bold bg-white border text-gray-600">Cancel</a>
+                <button type="submit" class="px-10 py-3.5 rounded-xl font-bold text-white {% if report_type == 'lost' %}bg-red-500{% else %}bg-emerald-500{% endif %}">Submit</button>
             </div>
         </form>
     </div>

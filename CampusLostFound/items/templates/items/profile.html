@@ -3,15 +3,20 @@
 
 {% block title %}My Profile - Retrace{% endblock %}
 
+{% block extra_head %}
+<!-- Custom Styles -->
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="profile-container">
     <!-- Profile Hero Card -->
     <div class="card-modern" style="margin-bottom: 32px;">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
-                {% if user.profile.profile_picture %}
+                {% if user.userprofile.avatar %}
                 <div style="margin-bottom: 16px; position: relative;">
-                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" 
+                    <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}"
                         style="width: 80px; height: 80px; border-radius: 16px; object-fit: cover; border: 3px solid var(--primary);">
                 </div>
                 {% else %}
@@ -24,16 +29,29 @@
 
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <h1 style="font-size: 1.5rem; font-weight: 700;">{{ user.username }}</h1>
+                    {% if user.userprofile.student_staff_id %}
                     <span class="badge badge-green">
                         <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
-                        Verified
+                        Verified {{ user.userprofile.get_user_type_display }}
                     </span>
+                    {% else %}
+                    <span class="badge badge-orange">
+                        <i data-lucide="circle-alert" style="width: 12px; height: 12px;"></i>
+                        Unverified
+                    </span>
+                    {% endif %}
                 </div>
                 <p
                     style="color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 6px; justify-content: center;">
                     <i data-lucide="mail" style="width: 14px; height: 14px;"></i>
                     {{ user.email }}
                 </p>
+                {% if user.userprofile.student_staff_id %}
+                <p
+                    style="color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
+                    ID: {{ user.userprofile.student_staff_id }}
+                </p>
+                {% endif %}
                 <p style="color: var(--muted); font-size: 12px; margin-top: 4px;">
                     Member since {{ user.date_joined|date:"F Y" }}
                 </p>
@@ -66,13 +84,14 @@
             </div>
             <div
                 style="text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
-                <div style="font-size: 1.25rem; font-weight: 700;">0</div>
+                <div style="font-size: 1.25rem; font-weight: 700;">{{ user_items_resolved_count|default:"0" }}</div>
                 <div
                     style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
                     Returned</div>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 1.25rem; font-weight: 700;">98%</div>
+                <div style="font-size: 1.25rem; font-weight: 700;">{% if user.userprofile.student_staff_id %}98%{% else
+                    %}70%{% endif %}</div>
                 <div
                     style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
                     Trust Score</div>

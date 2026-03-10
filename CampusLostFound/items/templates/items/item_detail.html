@@ -3,6 +3,11 @@
 
 {% block title %}{{ item.name }} - Retrace{% endblock %}
 
+{% block extra_head %}
+<!-- Custom Styles -->
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="profile-container" style="max-width: 800px;">
     <!-- Brand / Back Navigation -->

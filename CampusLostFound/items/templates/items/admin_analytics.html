@@ -1,0 +1,206 @@
+{% extends 'items/base.html' %}
+{% load static %}
+
+{% block title %}Admin Portal - Analytics{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-[#f8fafc] overflow-hidden font-sans" x-data="{ sidebarOpen: true }">
+
+    {% include 'items/_admin_sidebar.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top Bar -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <!-- Breadcrumbs -->
+            <nav class="flex items-center gap-2 text-sm font-medium">
+                <a href="{% url 'items:dashboard' %}" class="text-indigo-600 hover:underline">Admin</a>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                <span class="text-gray-900">Analytics</span>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 leading-none">System Admin</span>
+                    <span class="text-[11px] text-gray-400 mt-0.5">{{ request.user.email }}</span>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    {{ request.user.username|slice:":2"|upper }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <!-- Page Heading -->
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">System Analytics</h2>
+                <p class="text-gray-500 font-medium text-lg mt-1">Real-time insights and platform performance metrics.
+                </p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total Items -->
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl -mr-12 -mt-12">
+                    </div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="package" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Volume</p>
+                            <p class="text-2xl font-black text-gray-900">{{ total_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lost Items -->
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100">
+                            <i data-lucide="circle-alert" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Lost</p>
+                            <p class="text-2xl font-black text-gray-900">{{ lost_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Found Items -->
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-3xl -mr-12 -mt-12">
+                    </div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100">
+                            <i data-lucide="circle-check" class="w-6 h-6 text-emerald-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Found</p>
+                            <p class="text-2xl font-black text-gray-900">{{ found_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resolved Rate -->
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center border border-amber-100">
+                            <i data-lucide="award" class="w-6 h-6 text-amber-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Success Rate</p>
+                            <p class="text-2xl font-black text-gray-900">{{ success_rate|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Charts Placeholders -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Activity Chart -->
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Activity Trends</h3>
+                            <p class="text-xs text-gray-400 font-medium">Monthly reporting volume</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Reported
+                            </span>
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 ml-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Resolved
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="h-64 flex items-end justify-between gap-4 px-2">
+                        {% for i in "12345678" %}
+                        <div class="flex-1 flex flex-col items-center justify-end gap-2 group">
+                            <div class="w-full bg-indigo-50 rounded-t-xl group-hover:bg-indigo-100 transition-colors relative"
+                                style="height: 60%">
+                                <div
+                                    class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    {{ forloop.counter }}0 reports
+                                </div>
+                            </div>
+                            <div class="w-full bg-emerald-50 rounded-t-xl group-hover:bg-emerald-100 transition-colors"
+                                style="height: 40%"></div>
+                            <span class="text-[10px] font-bold text-gray-400 mt-2">Mon {{ forloop.counter }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Category Distribution -->
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Category Distribution</h3>
+                            <p class="text-xs text-gray-400 font-medium">Most common reported items</p>
+                        </div>
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-gray-300"></i>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-gray-700">Electronics</span>
+                                <span class="text-gray-400">45%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-indigo-500 rounded-full" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-gray-700">Personal Items</span>
+                                <span class="text-gray-400">28%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: 28%;"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-gray-700">Documents & Cards</span>
+                                <span class="text-gray-400">15%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-amber-500 rounded-full" style="width: 15%;"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-gray-700">Other</span>
+                                <span class="text-gray-400">12%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-gray-400 rounded-full" style="width: 12%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

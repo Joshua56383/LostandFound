@@ -6,122 +6,448 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Campus Lost & Found{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body>
-    <nav>
-        <div class="navbar">
-            <a href="{% url 'items:item_list' %}"
-                style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                <div style="width: 32px; height: 32px; overflow: hidden; border-radius: 8px;">
-                    <img src="{% static 'img/logo.png' %}" alt="Retrace Logo"
-                        style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-                <span class="brand-text">Retrace</span>
-            </a>
+<body class="min-h-screen bg-gray-50 font-sans text-gray-900 selection:bg-indigo-100 selection:text-indigo-900"
+    x-data="{ reportOpen: false, reportType: 'lost' }">
 
-            <div class="nav-links">
-                <a href="{% url 'items:dashboard' %}" class="nav-link">
-                    <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{% url 'items:item_list' %}" class="nav-link">
-                    <i data-lucide="list" style="width: 18px; height: 18px;"></i>
-                    <span>Browse</span>
-                </a>
-
-                {% if user.is_authenticated %}
-                <div class="nav-user" style="position: relative;">
-                    <button class="notification-btn" id="notificationBtn" onclick="toggleNotifications(event)">
-                        <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-                        <div class="notification-dot"></div>
-                    </button>
-                    
-                    <!-- Notification Dropdown -->
-                    <div id="notificationPanel" class="notification-panel" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid var(--border); border-radius: 12px; width: 320px; max-height: 400px; overflow-y: auto; box-shadow: var(--shadow-lg); z-index: 1000;">
-                        <div style="padding: 16px; border-bottom: 1px solid var(--border);">
-                            <h3 style="font-size: 14px; font-weight: 600; margin: 0;">Notifications</h3>
+    <!-- Header -->
+    {% block header %}
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'items:item_list' %}" class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center shadow-inner">
+                            <i data-lucide="package" class="w-4 h-4 text-white"></i>
                         </div>
-                        <div style="padding: 0;">
-                            <!-- Recent Items -->
-                            {% with recent=user.item_set.all|slice:":5" %}
-                                {% if recent %}
-                                    {% for item in recent %}
-                                    <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'" onclick="window.location='{% url 'items:item_detail' item.pk %}'">
-                                        <div style="display: flex; gap: 12px; align-items: start;">
-                                            <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                                <i data-lucide="package" style="width: 20px; height: 20px;"></i>
-                                            </div>
-                                            <div style="flex: 1; min-width: 0;">
-                                                <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">{{ item.name }}</div>
-                                                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">{{ item.get_status_display }} • {{ item.date_reported|date:"M d" }}</div>
-                                                <div style="font-size: 12px; color: var(--text-muted);">{{ item.location }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div style="padding: 32px 16px; text-align: center; color: var(--text-muted);">
-                                        <p style="font-size: 13px;">No recent items</p>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
+                        <div>
+                            <h1 class="text-lg font-bold tracking-tight text-gray-900 leading-none">Campus Lost & Found
+                            </h1>
                         </div>
-                    </div>
-                    
-                    <a href="{% url 'items:profile' %}" class="avatar-small" title="{{ user.username }}">
-                        {{ user.username|make_list|first|upper }}
                     </a>
                 </div>
-                {% else %}
-                <div style="display: flex; gap: 8px;">
-                    <a href="{% url 'login' %}" class="btn btn-outline" style="padding: 6px 14px;">Log In</a>
-                    <a href="{% url 'signup' %}" class="btn btn-primary" style="padding: 6px 14px;">Join</a>
+
+                <!-- Right Side Navigation -->
+                <div class="flex items-center gap-3">
+                    {% if user.is_authenticated %}
+                    <div
+                        class="hidden md:flex items-center gap-2 mr-2 bg-gray-50 rounded-full p-1 border border-gray-100">
+                        <button @click="reportType = 'lost'; reportOpen = true"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full text-red-600 hover:bg-white hover:shadow-sm transition-all">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Report Lost
+                        </button>
+                        <div class="w-px h-4 bg-gray-200"></div>
+                        <button @click="reportType = 'found'; reportOpen = true"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full text-emerald-600 hover:bg-white hover:shadow-sm transition-all">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Report Found
+                        </button>
+                    </div>
+
+                    <!-- Notifications Dropdown (Alpine.js) -->
+                    <div x-data="{
+                            open: false,
+                            notifications: [],
+                            init() {
+                                this.fetchNotifications();
+                                setInterval(() => this.fetchNotifications(), 30000); // Poll every 30s
+                            },
+                            fetchNotifications() {
+                                fetch('/api/notifications/')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        this.notifications = data.notifications || [];
+                                    })
+                                    .catch(err => console.error('Error fetching notifications:', err));
+                            },
+                            markAsRead(id) {
+                                fetch('/api/notifications/read/' + id + '/', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                                        'Content-Type': 'application/json'
+                                    }
+                                }).then(() => {
+                                    this.notifications = this.notifications.filter(n => n.id !== id);
+                                });
+                            }
+                        }" class="relative mr-2">
+                        <button @click="open = !open; if(open) fetchNotifications()" @click.away="open = false"
+                            class="relative p-2 text-gray-500 hover:text-gray-700 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span x-show="notifications.length > 0"
+                                class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full"
+                                x-text="notifications.length"></span>
+                        </button>
+
+                        <div x-show="open" style="display: none;" x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="transform opacity-100 scale-100"
+                            x-transition:leave-end="transform opacity-0 scale-95"
+                            class="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden">
+                            <div
+                                class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                                <h3 class="text-sm font-bold text-gray-900">Notifications</h3>
+                                <span class="text-xs font-medium text-gray-500"
+                                    x-text="notifications.length + ' unread'"></span>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto w-full divide-y divide-gray-50">
+                                <template x-if="notifications.length === 0">
+                                    <div class="px-4 py-8 text-center text-gray-500 text-sm">
+                                        <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
+                                        No new notifications
+                                    </div>
+                                </template>
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <div class="p-4 hover:bg-gray-50 transition-colors flex gap-3 relative group">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
+                                            <i data-lucide="zap" class="w-4 h-4"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0 pr-6">
+                                            <p class="text-sm text-gray-800 font-medium leading-snug"
+                                                x-text="notif.message"></p>
+                                            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                                <span x-text="notif.time_ago"></span>
+                                            </p>
+                                        </div>
+                                        <button @click.stop="markAsRead(notif.id)"
+                                            class="absolute right-3 top-4 text-gray-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Mark as read">
+                                            <i data-lucide="check" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Dropdown (Alpine.js) -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" @click.away="open = false" class="focus:outline-none">
+                            <div
+                                class="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm hover:bg-indigo-100 transition-colors">
+                                {{ user.username|make_list|first|upper }}
+                            </div>
+                        </button>
+
+                        <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="transform opacity-100 scale-100"
+                            x-transition:leave-end="transform opacity-0 scale-95" style="display: none;"
+                            class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-50">
+
+                            <div class="px-4 py-3">
+                                <p class="text-sm font-medium leading-none text-gray-900">{{ user.username }}</p>
+                                <p class="text-xs text-gray-500 mt-1 truncate">{{ user.email|default:"No email" }}</p>
+                            </div>
+
+                            <div class="py-1">
+                                {% if user.is_staff or user.is_superuser %}
+                                <a href="{% url 'items:dashboard' %}"
+                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i data-lucide="shield"
+                                        class="mr-2 h-4 w-4 text-gray-400 group-hover:text-gray-500"></i>
+                                    Admin Dashboard
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'items:profile' %}"
+                                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i data-lucide="user"
+                                        class="mr-2 h-4 w-4 text-gray-400 group-hover:text-gray-500"></i>
+                                    Profile
+                                </a>
+                            </div>
+                            <div class="py-1">
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="group flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:text-red-600 focus:bg-red-50 font-medium cursor-pointer">
+                                        <i data-lucide="log-out"
+                                            class="mr-2 h-4 w-4 text-red-400 group-hover:text-red-500"></i>
+                                        Log out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex gap-2">
+                        <a href="{% url 'login' %}"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Log
+                            In</a>
+                        <a href="{% url 'signup' %}"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-colors">Join</a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
-    </nav>
+    </header>
+    {% endblock %}
 
-    <div class="main-wrapper">
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Report Item Modal (Alpine.js) -->
+    <div x-show="reportOpen" style="display: none;" class="relative z-50" @keydown.escape.window="reportOpen = false">
+        <div x-show="reportOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div x-show="reportOpen" @click.away="reportOpen = false" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-2xl md:rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border-0 p-0">
+
+                    <!-- Modal Header -->
+                    <div :class="reportType === 'lost' ? 'bg-red-500' : 'bg-emerald-500'"
+                        class="px-6 py-8 md:px-8 text-white relative overflow-hidden transition-colors duration-300">
+                        <div class="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                    <template x-if="reportType === 'lost'">
+                                        <i data-lucide="circle-alert" class="w-6 h-6 text-white"></i>
+                                    </template>
+                                    <template x-if="reportType === 'found'">
+                                        <i data-lucide="circle-check" class="w-6 h-6 text-white"></i>
+                                    </template>
+                                </div>
+                                <div>
+                                    <h2 class="text-2xl font-bold tracking-tight"
+                                        x-text="reportType === 'lost' ? 'Report Lost Item' : 'Report Found Item'"></h2>
+                                    <p class="text-white/80 mt-1">Please provide as many details as possible.</p>
+                                </div>
+                            </div>
+                            <button @click="reportOpen = false"
+                                class="w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors backdrop-blur-sm">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body (Form) -->
+                    <form action="{% url 'items:add_item' %}" method="POST" enctype="multipart/form-data"
+                        class="p-6 md:p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" :value="reportType">
+
+                        <div class="space-y-5">
+                            <h3
+                                class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b border-gray-100 pb-2">
+                                <i data-lucide="package" class="w-4 h-4 text-gray-400"></i> ITEM INFORMATION
+                            </h3>
+
+                            <div class="space-y-1.5">
+                                <label for="modal_id_name" class="block text-sm font-bold text-gray-700">Item
+                                    Name</label>
+                                <input type="text" name="name" id="modal_id_name" required
+                                    placeholder="e.g., Blue JanSport Backpack"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium placeholder:text-gray-400 placeholder:font-normal" />
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label for="modal_id_description"
+                                    class="block text-sm font-bold text-gray-700">Description</label>
+                                <textarea name="description" id="modal_id_description" required rows="3"
+                                    placeholder="Describe distinguishing features, contents, or specific marks..."
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm resize-none font-medium placeholder:text-gray-400 placeholder:font-normal"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="space-y-1.5">
+                                    <label class="block text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                        <i data-lucide="tag" class="w-3.5 h-3.5 text-gray-400"></i> Category
+                                    </label>
+                                    <div class="relative">
+                                        <select name="category" required
+                                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm appearance-none font-medium pr-10">
+                                            <option value="" disabled selected>Select a category</option>
+                                            <option value="Electronics">Electronics</option>
+                                            <option value="Accessories">Accessories</option>
+                                            <option value="Books & Stationery">Books & Stationery</option>
+                                            <option value="Clothing">Clothing</option>
+                                            <option value="Bags & Backpacks">Bags & Backpacks</option>
+                                            <option value="Keys & ID Cards">Keys & ID Cards</option>
+                                            <option value="Sports Equipment">Sports Equipment</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <i data-lucide="chevron-down"
+                                            class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400"></i> Location
+                                    </label>
+                                    <div class="relative">
+                                        <select name="location" required
+                                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm appearance-none font-medium pr-10">
+                                            <option value="" disabled selected>Select a location</option>
+                                            <option value="Library">Library</option>
+                                            <option value="Student Center">Student Center</option>
+                                            <option value="Cafeteria">Cafeteria</option>
+                                            <option value="Gymnasium">Gymnasium</option>
+                                            <option value="Parking Lot">Parking Lot</option>
+                                            <option value="Lecture Hall A">Lecture Hall A</option>
+                                            <option value="Lecture Hall B">Lecture Hall B</option>
+                                            <option value="Science Building">Science Building</option>
+                                            <option value="Arts Building">Arts Building</option>
+                                            <option value="Dormitory">Dormitory</option>
+                                        </select>
+                                        <i data-lucide="chevron-down"
+                                            class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                    <i data-lucide="image" class="w-3.5 h-3.5 text-gray-400"></i> Image Upload <span
+                                        class="text-gray-400 font-normal">(Optional)</span>
+                                </label>
+                                <input type="file" name="image" accept="image/*"
+                                    class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer" />
+                            </div>
+                        </div>
+
+                        <!-- Contact Details Part -->
+                        <div class="space-y-5 pt-2">
+                            <h3
+                                class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b border-gray-100 pb-2">
+                                <i data-lucide="user" class="w-4 h-4 text-gray-400"></i> CONTACT INFORMATION
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="space-y-1.5">
+                                    <label class="block text-sm font-bold text-gray-700">Your Name</label>
+                                    <input type="text" name="contact_name" required value="{{ user.username }}"
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-sm font-bold text-gray-700">Email Address</label>
+                                    <input type="email" name="contact_email" required value="{{ user.email }}"
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="pt-8 flex flex-col sm:flex-row justify-end gap-3 border-t border-gray-100 mt-4">
+                            <button type="button" @click="reportOpen = false"
+                                class="px-8 py-3.5 rounded-xl font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-all order-2 sm:order-1">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                :class="reportType === 'lost' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'"
+                                class="px-10 py-3.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/10 transition-all active:scale-95 order-1 sm:order-2">
+                                Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div x-data="{ show: true }" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {{ message }}
+        <div x-data="{ showMsg: true }" x-show="showMsg" x-init="setTimeout(() => showMsg = false, 5000)"
+            x-transition.opacity.duration.300ms
+            class="flex items-center gap-3 p-4 rounded-xl shadow-lg border {% if message.tags == 'success' %}bg-white border-emerald-100 text-emerald-800{% elif message.tags == 'error' %}bg-white border-red-100 text-red-800{% else %}bg-white border-gray-100 text-gray-800{% endif %} max-w-sm w-full">
+
+            {% if message.tags == 'success' %}
+            <i data-lucide="circle-check" class="w-5 h-5 text-emerald-500"></i>
+            {% elif message.tags == 'error' %}
+            <i data-lucide="circle-alert" class="w-5 h-5 text-red-500"></i>
+            {% else %}
+            <i data-lucide="info" class="w-5 h-5 text-indigo-500"></i>
+            {% endif %}
+
+            <div class="flex-1">
+                <p class="text-sm font-medium">{{ message }}</p>
+            </div>
+
+            <button @click="showMsg = false" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
         </div>
         {% endfor %}
         {% endif %}
-
-        {% block content %}
-        {% endblock %}
     </div>
 
     <script>
-        lucide.createIcons();
-        
-        // Notification toggle
-        function toggleNotifications(event) {
-            event.preventDefault();
-            const panel = document.getElementById('notificationPanel');
-            if (panel.style.display === 'none' || panel.style.display === '') {
-                panel.style.display = 'block';
-            } else {
-                panel.style.display = 'none';
-            }
-        }
-        
-        // Close notification panel when clicking outside
-        document.addEventListener('click', function(event) {
-            const panel = document.getElementById('notificationPanel');
-            const btn = document.getElementById('notificationBtn');
-            if (panel && btn && !panel.contains(event.target) && !btn.contains(event.target)) {
-                panel.style.display = 'none';
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Auto-initialize icons on DOM changes (helps with Alpine mutations rendering icons)
+            const observer = new MutationObserver((mutations) => {
+                let shouldUpdate = false;
+                mutations.forEach((mutation) => {
+                    if (mutation.addedNodes.length) {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === 1) { // ELEMENT_NODE
+                                // If the node itself is an icon or contains unrendered icons
+                                if ((node.tagName === 'I' && node.hasAttribute('data-lucide')) ||
+                                    node.querySelector('i[data-lucide]')) {
+                                    shouldUpdate = true;
+                                }
+                            }
+                        });
+                    }
+                });
+
+                if (shouldUpdate) {
+                    try { lucide.createIcons(); } catch (e) { }
+
+                    // Mark remaining unrendered icons (e.g., misspelled names like check-circle-2) 
+                    // to prevent them from causing infinite loops in future mutations
+                    document.querySelectorAll('i[data-lucide]').forEach(el => {
+                        el.removeAttribute('data-lucide');
+                    });
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
         });
     </script>
 </body>
