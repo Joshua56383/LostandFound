@@ -1,4 +1,4 @@
-{% extends 'items/base.html' %}
+﻿{% extends 'items/base.html' %}
 {% load static %}
 
 {% block title %}My Profile - Retrace{% endblock %}
@@ -126,7 +126,7 @@
                         class="badge {% if item.status == 'lost' %}badge-orange{% elif item.status == 'found' %}badge-green{% else %}badge-blue{% endif %}">
                         {{ item.status|title }}
                     </span>
-                    <span style="color: var(--muted); font-size: 12px;">•</span>
+                    <span style="color: var(--muted); font-size: 12px;">â€¢</span>
                     <span style="color: var(--muted); font-size: 12px;">{{ item.date_reported|date:"M d, Y" }}</span>
                 </div>
                 <h3 class="listing-title">{{ item.name }}</h3>

@@ -18,6 +18,7 @@ class Item(models.Model):
     contact_email = models.EmailField(blank=True)
     image = models.ImageField(upload_to='items/', blank=True, null=True)
     date_reported = models.DateField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
 
 
     def __str__(self):
@@ -60,6 +61,25 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"To {self.recipient.username}: {self.message[:30]}..."
+
+    class Meta:
+        ordering = ['-created_at']
+
+class ClaimRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='claims')
+    claimer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='claims_made')
+    message = models.TextField(help_text="Provide proof of ownership or additional details.")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Claim for {self.item.name} by {self.claimer.username}"
 
     class Meta:
         ordering = ['-created_at']

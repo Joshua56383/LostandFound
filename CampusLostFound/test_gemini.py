@@ -1,9 +1,20 @@
+import os
 from google import genai
+from dotenv import load_dotenv
 
-# The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client(api_key= "AIzaSyD842Z9sAP4HFVx0UQZiO7khQLd6YwF-Kw")
 
+load_dotenv()
+
+
+api_key = os.environ.get("GEMINI_API_KEY")
+
+
+client = genai.Client(api_key=api_key)
+
+# 4. Make the API request
 response = client.models.generate_content(
-    model="gemini-3-flash-preview", contents="Explain Epstien Files"
+    model="gemini-3-flash-preview", 
+    contents="Person related to Epstein"
 )
+
 print(response.text)

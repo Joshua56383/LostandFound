@@ -1,0 +1,58 @@
+﻿{% extends 'items/base.html' %}
+{% load static %}
+
+{% block title %}Claim {{ item.name }} - Retrace{% endblock %}
+
+{% block content %}
+<div class="profile-container" style="max-width: 600px;">
+    <div class="mb-6 text-center">
+        <h1 style="font-size: 2rem;">Claim Item</h1>
+        <p class="text-muted">Submit a request to claim "{{ item.name }}"</p>
+    </div>
+
+    <div class="card-modern">
+        <div
+            style="display: flex; gap: 20px; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}"
+                style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;">
+            {% else %}
+            <div
+                style="width: 80px; height: 80px; background: #f8fafc; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                <i data-lucide="image" style="width: 32px; height: 32px;"></i>
+            </div>
+            {% endif %}
+            <div>
+                <h3 style="margin: 0;">{{ item.name }}</h3>
+                <p style="margin: 4px 0 0; font-size: 14px; color: var(--text-muted);">{{ item.location }} &bull; {{
+                    item.get_status_display }}</p>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group mb-6">
+                <label class="form-label" style="text-transform: uppercase;">Proof of Ownership</label>
+                {{ form.message }}
+                {% if form.message.errors %}
+                <div class="error-msg">{{ form.message.errors }}</div>
+                {% endif %}
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                    Describe characteristics only the owner would know (serial number, specific contents, etc.).
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                    Submit Claim
+                </button>
+                <a href="{% url 'items:item_detail' item.id %}" class="btn btn-light" style="flex: 1;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

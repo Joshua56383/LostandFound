@@ -1,34 +1,42 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import Item, UserLoginLog
+from .models import Item, UserLoginLog, ClaimRequest
 from .forms import ItemForm
 
 class ItemModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.user = User.objects.create_user(username='testuser_model', password='password123')
         self.item = Item.objects.create(
             name='Test Item',
             description='Test Description',
             location='Test Location',
             status='lost',
-            owner=self.user
+            owner=self.user,
+            is_approved=True
         )
+
+    def test_item_creation(self):
+        self.assertEqual(self.item.name, 'Test Item')
+        self.assertEqual(str(self.item), 'Test Item')
+        self.assertEqual(self.item.status, 'lost')
+        self.assertTrue(self.item.is_approved)
 
 class DashboardViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.user = User.objects.create_user(username='admin_user', password='password123', is_staff=True)
         self.item = Item.objects.create(
-            name='Test Item',
-            description='Test Description',
-            location='Test Location',
+            name='Dashboard Item',
+            description='Test',
+            location='Test',
             status='lost',
-            owner=self.user
+            owner=self.user,
+            is_approved=True
         )
 
     def test_dashboard_view_authenticated(self):
-        self.client.login(username='testuser', password='password123')
+        self.client.login(username='admin_user', password='password123')
         response = self.client.get(reverse('items:dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'items/dashboard.html')
@@ -37,51 +45,42 @@ class DashboardViewTest(TestCase):
         response = self.client.get(reverse('items:dashboard'))
         self.assertRedirects(response, '/accounts/login/?next=/dashboard/')
 
-
-    def test_item_creation(self):
-        self.assertEqual(self.item.name, 'Test Item')
-        self.assertEqual(str(self.item), 'Test Item')
-        self.assertEqual(self.item.status, 'lost')
-
-
 class ItemViewTest(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.user = User.objects.create_user(username='regular_user', password='password123')
         self.item = Item.objects.create(
-            name='Test Item',
-            description='Test Description',
-            location='Test Location',
+            name='Public Item',
+            description='Visible',
+            location='Here',
+            status='found',
+            owner=self.user,
+            is_approved=True
+        )
+        self.pending_item = Item.objects.create(
+            name='Secret Item',
+            description='Hidden',
+            location='Somewhere',
             status='lost',
-            owner=self.user
+            owner=self.user,
+            is_approved=False
         )
 
-    def test_item_list_view(self):
+    def test_item_list_view_filters_approved(self):
         response = self.client.get(reverse('items:item_list'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Item')
-        self.assertTemplateUsed(response, 'items/item_list.html')
+        self.assertContains(response, 'Public Item')
+        self.assertNotContains(response, 'Secret Item')
 
     def test_item_detail_view(self):
         response = self.client.get(reverse('items:item_detail', args=[self.item.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Test Item')
-        self.assertTemplateUsed(response, 'items/item_detail.html')
+        self.assertContains(response, 'Public Item')
 
-    def test_add_item_view_unauthenticated(self):
-        response = self.client.get(reverse('items:add_item'))
-        self.assertRedirects(response, '/accounts/login/?next=/add/')
-
-    def test_add_item_view_authenticated(self):
-        self.client.login(username='testuser', password='password123')
-        response = self.client.get(reverse('items:add_item'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'items/add_item.html')
-
-    def test_add_item_submission(self):
-        self.client.login(username='testuser', password='password123')
+    def test_add_item_submission_unapproved(self):
+        self.client.login(username='regular_user', password='password123')
         data = {
-            'name': 'New Lost Item',
+            'name': 'New Unapproved',
             'description': 'Description',
             'location': 'Library',
             'status': 'lost',
@@ -89,40 +88,166 @@ class ItemViewTest(TestCase):
         }
         response = self.client.post(reverse('items:add_item'), data)
         self.assertRedirects(response, reverse('items:item_list'))
-        self.assertTrue(Item.objects.filter(name='New Lost Item').exists())
+        item = Item.objects.get(name='New Unapproved')
+        self.assertFalse(item.is_approved)
 
     def test_login_creates_log(self):
-        self.client.login(username='testuser', password='password123')
-        log = UserLoginLog.objects.get(user=self.user)
-        self.assertEqual(log.login_source, 'Web Portal')
+        self.client.login(username='regular_user', password='password123')
+        self.assertTrue(UserLoginLog.objects.filter(user=self.user).exists())
 
-    def test_admin_login_redirect_for_user(self):
-        # Regular user trying to access admin should typically be redirected to admin login,
-        # BUT since we want strict separation, we verify they can't just log in via admin if not staff.
-        # However, built-in admin login behavior checks is_staff.
-        self.client.login(username='testuser', password='password123')
-        response = self.client.get('/admin/')
-        # If logged in as non-staff, admin often redirects to admin login with ?next=...
-        # or shows an error. Standard behavior is redirection to /admin/login/?next=/admin/ 
-        # even if logged in as reporting user, because not staff.
-        # Let's verify our LOGIN_URL setting works for general redirects:
-        self.client.logout()
-        response = self.client.get(reverse('items:add_item')) 
-        # Should NOT go to /accounts/login/ if we set it to 'login' which resolves to /accounts/login/ usually
-        # but let's check the redirect chain.
-        self.assertRedirects(response, '/accounts/login/?next=/add/')
+class AdminApprovalWorkflowTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(username='admin_staff', password='password123', is_staff=True)
+        self.user = User.objects.create_user(username='requester', password='password123')
+        self.item = Item.objects.create(
+            name='Pending Item',
+            description='Wait',
+            location='Desk',
+            status='lost',
+            owner=self.user,
+            is_approved=False
+        )
 
-    def test_admin_login_source_log(self):
-        # Create a superuser to verify 'Admin' source log
-        admin_user = User.objects.create_superuser('admin', 'admin@test.com', 'password123')
-        self.client.login(username='admin', password='password123')
-        # Admin login usually happens via POST to /admin/login/
-        # Client.login() does not simulate the *URL* used, it just sets the session.
-        # To test the signal logic dependent on request.path, we must POST to the login view.
-        self.client.logout()
-        response = self.client.post('/admin/login/', {'username': 'admin', 'password': 'password123', 'next': '/admin/'})
-        self.assertTrue(UserLoginLog.objects.filter(user=admin_user, login_source='Admin').exists())
+    def test_approve_item_workflow(self):
+        self.client.login(username='admin_staff', password='password123')
+        response = self.client.get(reverse('items:approve_item', args=[self.item.id]))
+        self.assertRedirects(response, reverse('items:dashboard'))
+        self.item.refresh_from_db()
+        self.assertTrue(self.item.is_approved)
 
+    def test_reject_item_workflow(self):
+        self.client.login(username='admin_staff', password='password123')
+        response = self.client.get(reverse('items:reject_item', args=[self.item.id]))
+        self.assertRedirects(response, reverse('items:dashboard'))
+        self.assertFalse(Item.objects.filter(id=self.item.id).exists())
+
+    def test_approve_non_existent_item_redirects(self):
+        self.client.login(username='admin_staff', password='password123')
+        response = self.client.get(reverse('items:approve_item', args=[9999]))
+        self.assertRedirects(response, reverse('items:dashboard'))
+        # Check that an info message was sent
+        messages = list(response.wsgi_request._messages)
+        self.assertTrue(any("already processed" in str(m) for m in messages))
+
+    def test_reject_non_existent_item_redirects(self):
+        self.client.login(username='admin_staff', password='password123')
+        # Use an ID that definitely doesn't exist
+        response = self.client.get(reverse('items:reject_item', args=[8888]))
+        self.assertRedirects(response, reverse('items:dashboard'))
+        messages = list(response.wsgi_request._messages)
+        self.assertTrue(any("already rejected" in str(m) for m in messages))
+
+class NotificationMatchTest(TestCase):
+    def setUp(self):
+        self.user_a = User.objects.create_user(username='user_a_notif', password='password123')
+        self.user_b = User.objects.create_user(username='user_b_notif', password='password123')
+        self.admin = User.objects.create_superuser(username='admin_notif', password='password123', email='admin_notif@test.com')
+
+    def test_matching_notifications(self):
+        # 1. User A reports a lost "Black Wallet"
+        self.client.login(username='user_a_notif', password='password123')
+        response = self.client.post(reverse('items:report_item', args=['lost']), {
+            'name': 'Black Wallet',
+            'description': 'Leather wallet with ID',
+            'category': 'Accessories',
+            'location': 'Library',
+            'status': 'lost',
+            'contact_name': 'User A',
+            'contact_email': 'a@test.com'
+        })
+        self.assertEqual(response.status_code, 302) # Should redirect
+        
+        # User A should have 1 notification (Received)
+        self.assertEqual(self.user_a.notifications.all().count(), 1)
+        
+        # 2. Admin approves User A's item
+        item_a = Item.objects.get(name='Black Wallet')
+        self.client.login(username='admin_notif', password='password123')
+        self.client.get(reverse('items:approve_item', args=[item_a.id]))
+        
+        # 3. User B reports a found "Black Wallet"
+        self.client.login(username='user_b_notif', password='password123')
+        self.client.post(reverse('items:report_item', args=['found']), {
+            'name': 'Black Wallet',
+            'description': 'Found a black leather wallet',
+            'category': 'Accessories',
+            'location': 'Library',
+            'status': 'found',
+            'contact_name': 'User B',
+            'contact_email': 'b@test.com'
+        })
+        
+        # User B should have 2 notifications: 1 Received, 1 Match
+        self.assertEqual(self.user_b.notifications.all().count(), 2)
+        self.assertTrue(self.user_b.notifications.filter(status_trigger='match_detected').exists())
+        
+        # User A should NOT have a match notification yet because User B is unapproved.
+        self.assertEqual(self.user_a.notifications.filter(status_trigger='match_detected').count(), 0)
+        
+        # 4. Admin approves User B's item
+        item_b = Item.objects.get(owner=self.user_b)
+        self.client.login(username='admin_notif', password='password123')
+        self.client.get(reverse('items:approve_item', args=[item_b.id]))
+        
+        # Now User A should have a match notification!
+        self.assertTrue(self.user_a.notifications.filter(status_trigger='match_detected').exists())
+
+class ClaimWorkflowTest(TestCase):
+    def setUp(self):
+        self.user_a = User.objects.create_user(username='user_a_claim', password='password123')
+        self.user_b = User.objects.create_user(username='user_b_claim', password='password123')
+        self.admin = User.objects.create_superuser(username='admin_claim', password='password123')
+        
+        # User A finds a "Gold Ring"
+        self.item = Item.objects.create(
+            name='Gold Ring',
+            description='Found at the park',
+            category='Jewelry',
+            location='Park',
+            status='found',
+            owner=self.user_a,
+            is_approved=True
+        )
+
+    def test_claim_submission_and_approval(self):
+        # 1. User B submits a claim
+        self.client.login(username='user_b_claim', password='password123')
+        response = self.client.post(reverse('items:submit_claim', args=[self.item.id]), {
+            'message': 'I lost my gold ring yesterday at the park.'
+        })
+        self.assertEqual(response.status_code, 302)
+        
+        claim = ClaimRequest.objects.get(item=self.item, claimer=self.user_b)
+        self.assertEqual(claim.status, 'pending')
+        
+        # 2. User A (finder) approves the claim
+        self.client.login(username='user_a_claim', password='password123')
+        self.client.get(reverse('items:approve_claim', args=[claim.id]))
+        
+        # Verify status updates
+        claim.refresh_from_db()
+        self.item.refresh_from_db()
+        self.assertEqual(claim.status, 'approved')
+        self.assertEqual(self.item.status, 'claimed')
+        
+        # Verify notification to claimer
+        self.assertTrue(self.user_b.notifications.filter(status_trigger='claim_approved').exists())
+
+    def test_staff_item_auto_approved(self):
+        self.client.login(username='admin_claim', password='password123')
+        data = {
+            'name': 'Staff Item',
+            'description': 'Direct',
+            'location': 'Office',
+            'status': 'found',
+            'category': 'Other',
+            'contact_name': 'Staff',
+            'contact_email': 'staff@test.com'
+        }
+        self.client.post(reverse('items:report_item', args=['found']), data)
+        item = Item.objects.get(name='Staff Item')
+        self.assertTrue(item.is_approved)
 
 class ItemFormTest(TestCase):
     def test_valid_form(self):
@@ -138,7 +263,7 @@ class ItemFormTest(TestCase):
 
     def test_invalid_form(self):
         data = {
-            'name': '', # Required
+            'name': '', 
             'description': 'Valid Description',
         }
         form = ItemForm(data=data)

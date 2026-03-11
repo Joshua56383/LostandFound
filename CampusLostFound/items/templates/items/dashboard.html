@@ -41,7 +41,9 @@
                     <span class="text-sm font-bold text-gray-900 leading-none">System Admin</span>
                     <span class="text-[11px] text-gray-400 mt-0.5">admin@university.edu</span>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">SA</div>
+                <div
+                    class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    SA</div>
             </div>
         </header>
 
@@ -52,70 +54,229 @@
             </div>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <!-- Tracked Items -->
-                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100"></div>
-                    <div class="relative z-10 flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100"><i data-lucide="package-search" class="w-6 h-6 text-indigo-600"></i></div>
-                        <span class="px-3 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] font-bold uppercase tracking-wider">Total</span>
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100">
                     </div>
-                    <div class="relative z-10"><p class="text-gray-500 text-sm font-bold mb-1">Items Tracked</p><p class="text-4xl font-extrabold text-gray-900">{{ total_items }}</p></div>
+                    <div class="relative z-10 flex justify-between items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="package-search" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-gray-50 text-gray-400 rounded-full text-[10px] font-bold uppercase tracking-wider">Total</span>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-gray-500 text-sm font-bold mb-1">Items Tracked</p>
+                        <p class="text-4xl font-extrabold text-gray-900">{{ total_items }}</p>
+                    </div>
                 </div>
                 <!-- Lost Items -->
-                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full blur-3xl group-hover:bg-red-100"></div>
-                    <div class="relative z-10 flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100"><i data-lucide="circle-alert" class="w-6 h-6 text-red-600"></i></div>
-                        <span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Action</span>
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full blur-3xl group-hover:bg-red-100">
                     </div>
-                    <div class="relative z-10"><p class="text-gray-500 text-sm font-bold mb-1">Lost Items</p><p class="text-4xl font-extrabold text-red-600">{{ lost_count }}</p></div>
+                    <div class="relative z-10 flex justify-between items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100">
+                            <i data-lucide="circle-alert" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Action</span>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-gray-500 text-sm font-bold mb-1">Lost Items</p>
+                        <p class="text-4xl font-extrabold text-red-600">{{ lost_count }}</p>
+                    </div>
                 </div>
                 <!-- Found Items -->
-                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-3xl group-hover:bg-emerald-100"></div>
-                    <div class="relative z-10 flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100"><i data-lucide="circle-check" class="w-6 h-6 text-emerald-600"></i></div>
-                        <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Safe</span>
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-3xl group-hover:bg-emerald-100">
                     </div>
-                    <div class="relative z-10"><p class="text-gray-500 text-sm font-bold mb-1">Found Items</p><p class="text-4xl font-extrabold text-emerald-600">{{ found_count }}</p></div>
+                    <div class="relative z-10 flex justify-between items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100">
+                            <i data-lucide="circle-check" class="w-6 h-6 text-emerald-600"></i>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Safe</span>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-gray-500 text-sm font-bold mb-1">Found Items</p>
+                        <p class="text-4xl font-extrabold text-emerald-600">{{ found_count }}</p>
+                    </div>
+                </div>
+                <!-- Pending Approval -->
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full blur-3xl group-hover:bg-amber-100">
+                    </div>
+                    <div class="relative z-10 flex justify-between items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center border border-amber-100">
+                            <i data-lucide="clock" class="w-6 h-6 text-amber-600"></i>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-gray-500 text-sm font-bold mb-1">Pending Approval</p>
+                        <p class="text-4xl font-extrabold text-amber-600">{{ pending_count }}</p>
+                    </div>
                 </div>
                 <!-- Rate -->
-                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100"></div>
-                    <div class="relative z-10 flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100"><i data-lucide="trending-up" class="w-6 h-6 text-indigo-600"></i></div>
-                        <span class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Rate</span>
+                <div
+                    class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl group-hover:bg-indigo-100">
                     </div>
-                    <div class="relative z-10"><p class="text-gray-500 text-sm font-bold mb-1">Success Resolution</p><p class="text-4xl font-extrabold text-indigo-600">{{ success_rate }}<span class="text-lg font-bold ml-0.5">%</span></p></div>
+                    <div class="relative z-10 flex justify-between items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider">Rate</span>
+                    </div>
+                    <div class="relative z-10">
+                        <p class="text-gray-500 text-sm font-bold mb-1">Success Resolution</p>
+                        <p class="text-4xl font-extrabold text-indigo-600">{{ success_rate }}<span
+                                class="text-lg font-bold ml-0.5">%</span></p>
+                    </div>
                 </div>
             </div>
 
+            {% if pending_claims %}
+            <!-- Claim Requests Table -->
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+                <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="hand-helping" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Pending Claim Requests</h2>
+                            <p class="text-xs text-gray-500">Review proof of ownership from claimants</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase">{{ pending_claims.count }} New</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/30">
+                                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Item
+                                </th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                    Claimer</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Proof
+                                    of Ownership</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date
+                                </th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            {% for claim in pending_claims %}
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <a href="{% url 'items:item_detail' claim.item.id %}"
+                                        class="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors">
+                                        {{ claim.item.name }}
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div
+                                            class="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                            {{ claim.claimer.username|slice:":1"|upper }}
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-700">{{ claim.claimer.username
+                                            }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                    {{ claim.message }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-400">
+                                    {{ claim.created_at|date:"M d, Y" }}
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{% url 'items:approve_claim' claim.id %}"
+                                            class="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-extrabold uppercase hover:bg-emerald-600 hover:text-white transition-all">Approve</a>
+                                        <a href="{% url 'items:reject_claim' claim.id %}"
+                                            class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-extrabold uppercase hover:bg-red-600 hover:text-white transition-all">Reject</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="space-y-4">
                 <!-- Controls -->
-                <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+                <div
+                    class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
                     <form method="get" class="flex-1 w-full relative">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                        <input type="text" name="q" value="{{ q }}" placeholder="Search records..." class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl text-sm" />
+                        <i data-lucide="search"
+                            class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" name="q" value="{{ q }}" placeholder="Search records..."
+                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl text-sm" />
                     </form>
                     <div class="flex items-center gap-3 w-full md:w-auto">
                         <div class="relative flex-1 md:w-48">
-                            <select name="status" onchange="this.form.submit()" class="w-full appearance-none bg-gray-50 border border-transparent rounded-2xl pl-5 pr-12 py-3 text-sm font-bold text-gray-700">
-                                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
-                                <option value="lost" {% if status_filter == 'lost' %}selected{% endif %}>Lost</option>
-                                <option value="found" {% if status_filter == 'found' %}selected{% endif %}>Found</option>
-                                <option value="claimed" {% if status_filter == 'claimed' %}selected{% endif %}>Claimed</option>
+                            <select name="status" onchange="this.form.submit()"
+                                class="w-full appearance-none bg-gray-50 border border-transparent rounded-2xl pl-5 pr-12 py-3 text-sm font-bold text-gray-700">
+                                <option value="all" {% if status_filter  ==  'all' %}selected{% endif %}>All Statuses
+                                </option>
+                                <option value="lost" {% if status_filter  ==  'lost' %}selected{% endif %}>Lost</option>
+                                <option value="found" {% if status_filter  ==  'found' %}selected{% endif %}>Found</option>
+                                <option value="claimed" {% if status_filter  ==  'claimed' %}selected{% endif %}>Claimed
+                                </option>
                             </select>
-                            <i data-lucide="list-filter" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="list-filter"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                         </div>
                         <div class="relative flex-1 md:w-48">
-                            <select name="category" onchange="this.form.submit()" class="w-full appearance-none bg-gray-50 border border-transparent rounded-2xl pl-5 pr-12 py-3 text-sm font-bold text-gray-700">
-                                <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
-                                {% for cat in categories %}<option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+                            <select name="category" onchange="this.form.submit()"
+                                class="w-full appearance-none bg-gray-50 border border-transparent rounded-2xl pl-5 pr-12 py-3 text-sm font-bold text-gray-700">
+                                <option value="all" {% if category  ==  'all' %}selected{% endif %}>All Categories</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {% if category  ==  cat %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
                             </select>
-                            <i data-lucide="tag" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="tag"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                         </div>
-                        <button type="button" @click="window.location.reload()" class="px-6 py-3 bg-[#0f172a] text-white rounded-2xl text-sm font-bold hover:bg-[#1e293b] flex items-center gap-2">
+                        <div class="relative flex-1 md:w-48">
+                            <select name="approval" onchange="this.form.submit()"
+                                class="w-full appearance-none bg-gray-50 border border-transparent rounded-2xl pl-5 pr-12 py-3 text-sm font-bold text-gray-700">
+                                <option value="all" {% if approval_filter  ==  'all' %}selected{% endif %}>All Approvals
+                                </option>
+                                <option value="pending" {% if approval_filter  ==  'pending' %}selected{% endif %}>Pending
+                                </option>
+                                <option value="approved" {% if approval_filter  ==  'approved' %}selected{% endif %}>
+                                    Approved</option>
+                            </select>
+                            <i data-lucide="shield-check"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <button type="button" @click="window.location.reload()"
+                            class="px-6 py-3 bg-[#0f172a] text-white rounded-2xl text-sm font-bold hover:bg-[#1e293b] flex items-center gap-2">
                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Refresh
                         </button>
                     </div>
@@ -132,9 +293,18 @@
                         <table class="w-full text-left">
                             <thead class="bg-gray-50/50">
                                 <tr>
-                                    <th class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Item Subject</th>
-                                    <th class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Status Tracker</th>
-                                    <th class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-right">Administrative Actions</th>
+                                    <th
+                                        class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
+                                        Item Subject</th>
+                                    <th
+                                        class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
+                                        Status Tracker</th>
+                                    <th
+                                        class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
+                                        Approval</th>
+                                    <th
+                                        class="px-8 py-5 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest text-right">
+                                        Administrative Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
@@ -142,42 +312,91 @@
                                 <tr class="hover:bg-gray-50/50 transition-colors group">
                                     <td class="px-8 py-6">
                                         <div class="flex items-center gap-4">
-                                            <div class="w-14 h-14 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 p-1 shrink-0">
-                                                {% if item.image %}<img src="{{ item.image.url }}" class="w-full h-full object-cover rounded-xl">{% else %}<div class="w-full h-full flex items-center justify-center text-gray-300"><i data-lucide="image" class="w-6 h-6"></i></div>{% endif %}
+                                            <div
+                                                class="w-14 h-14 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 p-1 shrink-0">
+                                                {% if item.image %}<img src="{{ item.image.url }}"
+                                                    class="w-full h-full object-cover rounded-xl">{% else %}<div
+                                                    class="w-full h-full flex items-center justify-center text-gray-300">
+                                                    <i data-lucide="image" class="w-6 h-6"></i>
+                                                </div>{% endif %}
                                             </div>
                                             <div>
                                                 <h4 class="font-bold text-[#4338ca] text-base">{{ item.name }}</h4>
                                                 <div class="flex items-center gap-2 mt-1">
-                                                    <span class="text-[11px] font-bold text-gray-400 flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i>{{ item.category|default:"Other" }}</span>
-                                                    <span class="text-[11px] font-bold text-gray-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>{{ item.date_reported|date:"M d" }}</span>
+                                                    <span
+                                                        class="text-[11px] font-bold text-gray-400 flex items-center gap-1"><i
+                                                            data-lucide="tag" class="w-3 h-3"></i>{{ item.category|default:"Other" }}</span>
+                                                    <span
+                                                        class="text-[11px] font-bold text-gray-400 flex items-center gap-1"><i
+                                                            data-lucide="clock" class="w-3 h-3"></i>{{ item.date_reported|date:"M d" }}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="px-8 py-6">
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest {% if item.status == 'lost' %}bg-red-50 text-red-600 border border-red-100{% elif item.status == 'found' %}bg-emerald-50 text-emerald-600 border border-emerald-100{% else %}bg-amber-50 text-amber-600 border border-amber-100{% endif %}">
-                                            <i data-lucide="circle-{% if item.status == 'lost' %}alert{% elif item.status == 'found' %}check{% else %}clock{% endif %}" class="w-3 h-3"></i>{{ item.status }}
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest {% if item.status     ==     'lost' %}bg-red-50 text-red-600 border border-red-100{% elif item.status  ==  'found' %}bg-emerald-50 text-emerald-600 border border-emerald-100{% else %}bg-amber-50 text-amber-600 border border-amber-100{% endif %}">
+                                            <i data-lucide="circle-{% if item.status     ==     'lost' %}alert{% elif item.status  ==  'found' %}check{% else %}clock{% endif %}"
+                                                class="w-3 h-3"></i>{{ item.status }}
                                         </span>
                                     </td>
                                     <td class="px-8 py-6">
+                                        {% if item.is_approved %}
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                            <i data-lucide="shield-check" class="w-3 h-3"></i>Approved
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100">
+                                            <i data-lucide="clock" class="w-3 h-3"></i>Pending
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-8 py-6">
                                         <div class="flex items-center justify-end gap-3">
+                                            {% if not item.is_approved %}
+                                            <div class="flex items-center gap-2">
+                                                <a href="{% url 'items:approve_item' item.id %}"
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-100"
+                                                    title="Approve">
+                                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                                </a>
+                                                <a href="{% url 'items:reject_item' item.id %}"
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100"
+                                                    title="Reject">
+                                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
                                             <div class="relative">
-                                                <select data-item-id="{{ item.id }}" @change="window.location.href = '/edit/' + $el.dataset.itemId + '/?quick_status=' + $event.target.value" class="appearance-none bg-white border border-gray-200 rounded-xl pl-4 pr-9 py-2.5 text-xs font-bold text-[#1e293b] cursor-pointer">
-                                                    <option value="lost" {% if item.status == 'lost' %}selected{% endif %}>Mark Lost</option>
-                                                    <option value="found" {% if item.status == 'found' %}selected{% endif %}>Mark Found</option>
-                                                    <option value="claimed" {% if item.status == 'claimed' %}selected{% endif %}>Mark Resolved</option>
+                                                <select data-item-id="{{ item.id }}"
+                                                    @change="window.location.href = '/edit/' + $el.dataset.itemId + '/?quick_status=' + $event.target.value"
+                                                    class="appearance-none bg-white border border-gray-200 rounded-xl pl-4 pr-9 py-2.5 text-xs font-bold text-[#1e293b] cursor-pointer">
+                                                    <option value="lost" {% if item.status  ==  'lost' %}selected{% endif %}>Mark Lost</option>
+                                                    <option value="found" {% if item.status  ==  'found' %}selected{% endif %}>Mark Found</option>
+                                                    <option value="claimed" {% if item.status  ==  'claimed' %}selected{% endif %}>Mark Resolved</option>
                                                 </select>
-                                                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                                <i data-lucide="chevron-down"
+                                                    class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
                                             </div>
                                             <div class="flex items-center gap-2">
-                                                <button type="button" @click="openEditModal({ id: {{ item.id }}, name: '{{ item.name|escapejs }}', category: '{{ item.category|default:'Other'|escapejs }}', location: '{{ item.location|escapejs }}', status: '{{ item.status|escapejs }}', description: '{{ item.description|escapejs }}' })" class="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                                                <button type="button" @click="openDeleteModal({ id: {{ item.id }}, name: '{{ item.name|escapejs }}' })" class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                                <button type="button"
+                                                    @click="openEditModal({ id: {{ item.id }}, name: '{{ item.name|escapejs }}', category: '{{ item.category|default:'Other'|escapejs }}', location: '{{ item.location|escapejs }}', status: '{{ item.status|escapejs }}', description: '{{ item.description|escapejs }}' })"
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100"><i
+                                                        data-lucide="pencil" class="w-4 h-4"></i></button>
+                                                <button type="button"
+                                                    @click="openDeleteModal({ id: {{ item.id }}, name: '{{ item.name|escapejs }}' })"
+                                                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100"><i
+                                                        data-lucide="trash-2" class="w-4 h-4"></i></button>
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="3" class="px-8 py-20 text-center">No matches found</td></tr>
+                                <tr>
+                                    <td colspan="4" class="px-8 py-20 text-center">No matches found</td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -186,8 +405,12 @@
                     <div class="px-8 py-6 border-t border-gray-50 flex items-center justify-between">
                         <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Showing {{ items.start_index }} - {{ items.end_index }} of {{ items.paginator.count }}</p>
                         <div class="flex items-center gap-2">
-                            {% if items.has_previous %}<a href="?page={{ items.previous_page_number }}&q={{ q }}&status={{ status_filter }}&category={{ category }}" class="px-4 py-2 border rounded-xl text-xs font-bold hover:bg-gray-50">Prev</a>{% endif %}
-                            {% if items.has_next %}<a href="?page={{ items.next_page_number }}&q={{ q }}&status={{ status_filter }}&category={{ category }}" class="px-4 py-2 border rounded-xl text-xs font-bold hover:bg-gray-50">Next</a>{% endif %}
+                            {% if items.has_previous %}<a
+                                href="?page={{ items.previous_page_number }}&q={{ q }}&status={{ status_filter }}&category={{ category }}"
+                                class="px-4 py-2 border rounded-xl text-xs font-bold hover:bg-gray-50">Prev</a>{% endif %}
+                            {% if items.has_next %}<a
+                                href="?page={{ items.next_page_number }}&q={{ q }}&status={{ status_filter }}&category={{ category }}"
+                                class="px-4 py-2 border rounded-xl text-xs font-bold hover:bg-gray-50">Next</a>{% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -202,21 +425,39 @@
             <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
             <div class="fixed inset-0 z-10 overflow-y-auto">
                 <div class="flex min-h-full items-center justify-center p-4">
-                    <div @click.away="editModalOpen = false" class="relative rounded-[2.5rem] bg-white sm:w-full sm:max-w-lg">
+                    <div @click.away="editModalOpen = false"
+                        class="relative rounded-[2.5rem] bg-white sm:w-full sm:max-w-lg">
                         <div class="px-8 py-7 border-b border-gray-100 flex items-center justify-between">
                             <h3 class="text-xl font-extrabold text-gray-900">Manage Record</h3>
-                            <button @click="editModalOpen = false" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-white border"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            <button @click="editModalOpen = false"
+                                class="w-10 h-10 flex items-center justify-center rounded-2xl bg-white border"><i
+                                    data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                         <form :action="'/edit/' + selectedItem.id + '/'" method="POST" class="p-8 space-y-5">
                             {% csrf_token %}
-                            <input type="text" name="name" :value="selectedItem.name" required class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" />
+                            <input type="text" name="name" :value="selectedItem.name" required
+                                class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" />
                             <div class="grid grid-cols-2 gap-4">
-                                <select name="category" :value="selectedItem.category" class="p-4 bg-gray-50 rounded-2xl border-0 font-bold"><option value="Electronics">Electronics</option><option value="Accessories">Accessories</option><option value="Other">Other</option></select>
-                                <select name="status" :value="selectedItem.status" class="p-4 bg-gray-50 rounded-2xl border-0 font-bold"><option value="lost">Lost</option><option value="found">Found</option><option value="claimed">Claimed</option></select>
+                                <select name="category" :value="selectedItem.category"
+                                    class="p-4 bg-gray-50 rounded-2xl border-0 font-bold">
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Accessories">Accessories</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <select name="status" :value="selectedItem.status"
+                                    class="p-4 bg-gray-50 rounded-2xl border-0 font-bold">
+                                    <option value="lost">Lost</option>
+                                    <option value="found">Found</option>
+                                    <option value="claimed">Claimed</option>
+                                </select>
                             </div>
-                            <textarea name="description" :value="selectedItem.description" required class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" rows="3"></textarea>
-                            <input type="text" name="location" :value="selectedItem.location" required class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" />
-                            <div class="flex gap-3 justify-end"><button type="submit" class="px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold">Update</button></div>
+                            <textarea name="description" :value="selectedItem.description" required
+                                class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" rows="3"></textarea>
+                            <input type="text" name="location" :value="selectedItem.location" required
+                                class="w-full p-4 bg-gray-50 rounded-2xl border-0 font-bold" />
+                            <div class="flex gap-3 justify-end"><button type="submit"
+                                    class="px-10 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold">Update</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -228,13 +469,19 @@
             <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
             <div class="fixed inset-0 z-10 overflow-y-auto">
                 <div class="flex min-h-full items-center justify-center p-4">
-                    <div @click.away="deleteModalOpen = false" class="relative rounded-[2.5rem] bg-white sm:w-full sm:max-w-md p-8 text-center">
-                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 mb-6"><i data-lucide="trash-2" class="h-8 w-8 text-red-600"></i></div>
+                    <div @click.away="deleteModalOpen = false"
+                        class="relative rounded-[2.5rem] bg-white sm:w-full sm:max-w-md p-8 text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 mb-6"><i
+                                data-lucide="trash-2" class="h-8 w-8 text-red-600"></i></div>
                         <h3 class="text-2xl font-extrabold text-gray-900">Delete Record</h3>
-                        <p class="mt-3 text-sm font-bold text-gray-500">Remove <span class="text-red-600" x-text="selectedItem.name"></span> permanently?</p>
+                        <p class="mt-3 text-sm font-bold text-gray-500">Remove <span class="text-red-600"
+                                x-text="selectedItem.name"></span> permanently?</p>
                         <div class="mt-8 flex gap-3 flex-col-reverse">
-                            <button @click="deleteModalOpen = false" class="flex-1 p-4 bg-white border rounded-2xl font-bold">Cancel</button>
-                            <form :action="'/delete/' + selectedItem.id + '/'" method="POST" class="flex-1">{% csrf_token %}<button type="submit" class="w-full p-4 bg-red-600 text-white rounded-2xl font-bold">Delete</button></form>
+                            <button @click="deleteModalOpen = false"
+                                class="flex-1 p-4 bg-white border rounded-2xl font-bold">Cancel</button>
+                            <form :action="'/delete/' + selectedItem.id + '/'" method="POST" class="flex-1">{% csrf_token %}<button type="submit"
+                                    class="w-full p-4 bg-red-600 text-white rounded-2xl font-bold">Delete</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -243,3 +490,4 @@
     </template>
 </div>
 {% endblock %}
+

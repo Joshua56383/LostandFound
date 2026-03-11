@@ -1,12 +1,20 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
 from django.contrib.auth.models import User
-from .models import Item, UserProfile
+from .models import Item, UserProfile, ClaimRequest
 
 class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
         fields = ['name', 'description', 'category', 'location', 'status', 'contact_name', 'contact_email', 'image']
+
+class ClaimForm(forms.ModelForm):
+    class Meta:
+        model = ClaimRequest
+        fields = ['message']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Provide proof of ownership (e.g., unique marks, what\'s inside, or where exactly you lost it).'}),
+        }
 
 class UserUpdateForm(forms.ModelForm):
     class Meta:

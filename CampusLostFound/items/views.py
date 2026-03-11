@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from . import models
 from . import ai_service
-from .forms import ItemForm, UserUpdateForm, UserProfileForm
+from .forms import ItemForm, UserUpdateForm, UserProfileForm, ClaimForm
 
 def create_notification(recipient, item, status_trigger):
     """Call Gemini to generate a message and save a Notification."""
@@ -18,6 +18,42 @@ def create_notification(recipient, item, status_trigger):
         status_trigger=status_trigger
     )
 
+def find_matches(new_item):
+    """
+    Search for potential matches for a newly reported item.
+    - Opposite status (lost vs found)
+    - Same category
+    - Case-insensitive overlap in name or description
+    """
+    opposite_status = 'found' if new_item.status == 'lost' else 'lost'
+    
+    # 1. Start with opposite status and same category
+    potential_matches = models.Item.objects.filter(
+        status=opposite_status,
+        category=new_item.category,
+        is_approved=True # Only match against approved items
+    ).exclude(id=new_item.id)
+    
+    matches = []
+    
+    # Simple keyword-based matching for now
+    name_words = set(new_item.name.lower().split())
+    
+    for potential in potential_matches:
+        pot_name_words = set(potential.name.lower().split())
+        
+        # Check for word overlap in names
+        if name_words & pot_name_words:
+            matches.append(potential)
+            continue
+            
+        # Check if new item name is in potential's description or vice versa
+        if new_item.name.lower() in potential.description.lower() or \
+           potential.name.lower() in new_item.description.lower():
+            matches.append(potential)
+            
+    return matches
+
 @login_required
 def dashboard(request):
     # Admin stats
@@ -25,6 +61,7 @@ def dashboard(request):
     lost_count = models.Item.objects.filter(status='lost').count()
     found_count = models.Item.objects.filter(status='found').count()
     claimed_count = models.Item.objects.filter(status='claimed').count()
+    pending_count = models.Item.objects.filter(is_approved=False).count()
     
     # Calculate System-wide Success Rate
     success_rate = 0
@@ -35,6 +72,7 @@ def dashboard(request):
     q = request.GET.get('q', '')
     status_filter = request.GET.get('status', 'all')
     category_filter = request.GET.get('category', 'all')
+    approval_filter = request.GET.get('approval', 'all')
     
     if request.user.is_staff:
         # Admin View: All items
@@ -51,6 +89,13 @@ def dashboard(request):
         
     if category_filter != 'all':
         items_query = items_query.filter(category=category_filter)
+
+    # Approval filter (admin only)
+    if request.user.is_staff and approval_filter != 'all':
+        if approval_filter == 'pending':
+            items_query = items_query.filter(is_approved=False)
+        elif approval_filter == 'approved':
+            items_query = items_query.filter(is_approved=True)
         
     # Pagination
     paginator = Paginator(items_query, 10)
@@ -65,25 +110,33 @@ def dashboard(request):
     user_total = models.Item.objects.filter(owner=request.user).count()
     user_resolved = models.Item.objects.filter(owner=request.user, status='claimed').count()
     
+    # Get claims depending on user role
+    if request.user.is_staff:
+        pending_claims = models.ClaimRequest.objects.filter(status='pending').order_by('-created_at')
+        template = 'items/dashboard.html'
+    else:
+        pending_claims = models.ClaimRequest.objects.filter(item__owner=request.user, status='pending').order_by('-created_at')
+        template = 'items/user_dashboard.html'
+
     context = {
         'total_items': total_items,
         'lost_count': lost_count,
         'found_count': found_count,
         'claimed_count': claimed_count,
+        'pending_count': pending_count,
         'success_rate': success_rate,
         'items': page_obj,
+        'pending_claims': pending_claims,
         'q': q,
         'status_filter': status_filter,
         'category': category_filter,
+        'approval_filter': approval_filter,
         'categories': categories,
         'user_total': user_total,
         'user_resolved': user_resolved,
     }
-    
-    if request.user.is_staff:
-        template = 'items/dashboard.html'
-    else:
-        template = 'items/user_dashboard.html'
+        
+    return render(request, template, context)
         
     return render(request, template, context)
 
@@ -95,7 +148,8 @@ def item_list(request):
     location = request.GET.get('location', 'all')
     tab = request.GET.get('tab', 'all')
 
-    items = models.Item.objects.all()
+    # Public feed: only show approved items
+    items = models.Item.objects.filter(is_approved=True)
 
     if q:
         items = items.filter(
@@ -118,15 +172,14 @@ def item_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # counts and distinct filter options
-    # Optimization: Combining counts could be better, but separate queries are clear for now.
-    # We could use .aggregate() but let's stick to basic optimization first (pagination).
-    total_count = models.Item.objects.count()
-    lost_count = models.Item.objects.filter(status='lost').count()
-    found_count = models.Item.objects.filter(status='found').count()
+    # counts only for approved items in public feed
+    approved_items = models.Item.objects.filter(is_approved=True)
+    total_count = approved_items.count()
+    lost_count = approved_items.filter(status='lost').count()
+    found_count = approved_items.filter(status='found').count()
 
-    categories = models.Item.objects.exclude(category='').order_by('category').values_list('category', flat=True).distinct()
-    locations = models.Item.objects.exclude(location='').order_by('location').values_list('location', flat=True).distinct()
+    categories = approved_items.exclude(category='').order_by('category').values_list('category', flat=True).distinct()
+    locations = approved_items.exclude(location='').order_by('location').values_list('location', flat=True).distinct()
 
     context = {
         'items': page_obj, # Use page_obj instead of all items
@@ -151,8 +204,29 @@ def add_item(request):
         if form.is_valid():
             item = form.save(commit=False)
             item.owner = request.user
+            # Auto-approve for staff, pending for regular users
+            item.is_approved = request.user.is_staff
             item.save()
-            messages.success(request, f'"{item.name}" reported successfully.')
+            
+            # 1. Send "Report Received" notification to the owner
+            create_notification(request.user, item, 'lost_reported' if item.status == 'lost' else 'found_reported')
+            
+            # 2. Check for matches (notifying the new owner immediately)
+            matches = find_matches(item)
+            if matches:
+                # Notify the new owner about the potential matches
+                create_notification(request.user, item, 'match_detected')
+                
+                # If the item is already approved (staff), notify the match owners too
+                if item.is_approved:
+                    for match in matches:
+                        if match.owner:
+                            create_notification(match.owner, match, 'match_detected')
+
+            if request.user.is_staff:
+                messages.success(request, f'"{ item.name }" added successfully.')
+            else:
+                messages.info(request, f'"{ item.name }" submitted and is pending admin approval.')
             return redirect('items:item_list')
     else:
         form = ItemForm()
@@ -168,14 +242,33 @@ def report_item(request, status):
         if form.is_valid():
             item = form.save(commit=False)
             item.owner = request.user
+            # Auto-approve for staff, pending for regular users
+            item.is_approved = request.user.is_staff
             item.save()
             
-            # Send Notification to all Admins
+            # 1. Send "Report Received" notification to the owner
             trigger = 'lost_reported' if item.status == 'lost' else 'found_reported'
+            create_notification(request.user, item, trigger)
+            
+            # 2. Check for matches (notifying the new owner immediately)
+            matches = find_matches(item)
+            if matches:
+                create_notification(request.user, item, 'match_detected')
+                
+                # If auto-approved, notify existing match owners
+                if item.is_approved:
+                    for match in matches:
+                        if match.owner:
+                            create_notification(match.owner, match, 'match_detected')
+
+            # 3. Notify Admins
             for admin_user in User.objects.filter(is_staff=True):
                 create_notification(admin_user, item, trigger)
                 
-            messages.success(request, f'"{item.name}" reported as {item.status}.')
+            if request.user.is_staff:
+                messages.success(request, f'"{item.name}" reported as {item.status}.')
+            else:
+                messages.info(request, f'"{item.name}" reported as {item.status}. It will appear in the public feed after admin approval.')
             return redirect('items:item_list')
     else:
         form = ItemForm(initial={'status': status})
@@ -275,7 +368,12 @@ def edit_item(request, pk):
 
 @login_required
 def delete_item(request, pk):
-    item = get_object_or_404(models.Item, pk=pk)
+    try:
+        item = models.Item.objects.get(pk=pk)
+    except models.Item.DoesNotExist:
+        messages.info(request, "Item already deleted or does not exist.")
+        return redirect('items:dashboard')
+
     if request.method == 'POST':
         item_name = item.name
         item.delete()
@@ -348,56 +446,111 @@ def audit_logs(request):
 def toggle_user_active(request, user_id):
     if not request.user.is_staff:
         return redirect('items:item_list')
-    user_to_toggle = get_object_or_404(User, id=user_id)
-    if user_to_toggle != request.user: # Prevent self-deactivation
-        user_to_toggle.is_active = not user_to_toggle.is_active
-        user_to_toggle.save()
-        status = "activated" if user_to_toggle.is_active else "deactivated"
-        messages.success(request, f'User {user_to_toggle.username} has been {status}.')
-    else:
-        messages.error(request, "You cannot deactivate your own account.")
+    if request.method == 'POST':
+        user_to_toggle = get_object_or_404(User, id=user_id)
+        if user_to_toggle != request.user: # Prevent self-deactivation
+            user_to_toggle.is_active = not user_to_toggle.is_active
+            user_to_toggle.save()
+            status = "activated" if user_to_toggle.is_active else "deactivated"
+            messages.success(request, f'User {user_to_toggle.username} has been {status}.')
+        else:
+            messages.error(request, "You cannot deactivate your own account.")
     return redirect('items:user_directory')
 
 @login_required
 def toggle_user_role(request, user_id):
     if not request.user.is_staff:
         return redirect('items:item_list')
-    user_to_toggle = get_object_or_404(User, id=user_id)
-    if user_to_toggle != request.user:
-        user_to_toggle.is_staff = not user_to_toggle.is_staff
-        user_to_toggle.save()
-        role = "Admin" if user_to_toggle.is_staff else "Standard"
-        messages.success(request, f'User {user_to_toggle.username} role updated to {role}.')
-    else:
-        messages.error(request, "You cannot change your own role.")
+    if request.method == 'POST':
+        user_to_toggle = get_object_or_404(User, id=user_id)
+        if user_to_toggle != request.user:
+            user_to_toggle.is_staff = not user_to_toggle.is_staff
+            user_to_toggle.save()
+            role = "Admin" if user_to_toggle.is_staff else "Standard"
+            messages.success(request, f'User {user_to_toggle.username} role updated to {role}.')
+        else:
+            messages.error(request, "You cannot change your own role.")
     return redirect('items:user_directory')
 
 @login_required
 def delete_user_admin(request, user_id):
     if not request.user.is_staff:
         return redirect('items:item_list')
-    user_to_delete = get_object_or_404(User, id=user_id)
-    if user_to_delete != request.user:
-        username = user_to_delete.username
-        user_to_delete.delete()
-        messages.success(request, f'User {username} has been permanently deleted.')
-    else:
-        messages.error(request, "You cannot delete your own account.")
+    if request.method == 'POST':
+        user_to_delete = get_object_or_404(User, id=user_id)
+        if user_to_delete != request.user:
+            username = user_to_delete.username
+            user_to_delete.delete()
+            messages.success(request, f'User {username} has been permanently deleted.')
+        else:
+            messages.error(request, "You cannot delete your own account.")
     return redirect('items:user_directory')
 
 @login_required
 def reset_user_password(request, user_id):
     if not request.user.is_staff:
         return redirect('items:item_list')
-    user_to_reset = get_object_or_404(User, id=user_id)
-    # Generic temporary password for demonstration
-    temp_pass = "Campus2026!"
-    user_to_reset.set_password(temp_pass)
-    user_to_reset.save()
-    messages.success(request, f'Password for {user_to_reset.username} reset to: {temp_pass}')
+    if request.method == 'POST':
+        user_to_reset = get_object_or_404(User, id=user_id)
+        # Generic temporary password for demonstration
+        temp_pass = "Campus2026!"
+        user_to_reset.set_password(temp_pass)
+        user_to_reset.save()
+        messages.success(request, f'Password for {user_to_reset.username} reset to: {temp_pass}')
     return redirect('items:user_directory')
 
 from django.http import JsonResponse
+
+
+@login_required
+def approve_item(request, item_id):
+    """Admin action to approve a pending item for the public feed."""
+    if not request.user.is_staff:
+        return redirect('items:item_list')
+    
+    try:
+        item = models.Item.objects.get(id=item_id)
+    except models.Item.DoesNotExist:
+        messages.info(request, "Item already processed or does not exist.")
+        return redirect('items:dashboard')
+
+    if not item.is_approved:
+        item.is_approved = True
+        item.save()
+        # 1. Notify the item owner
+        if item.owner:
+            create_notification(item.owner, item, 'item_approved')
+        
+        # 2. Notify owners of matching items
+        matches = find_matches(item)
+        for match in matches:
+            if match.owner:
+                create_notification(match.owner, match, 'match_detected')
+
+        messages.success(request, f'"{item.name}" has been approved and is now visible in the public feed.')
+    return redirect('items:dashboard')
+
+
+@login_required
+def reject_item(request, item_id):
+    """Admin action to reject and delete a pending item."""
+    if not request.user.is_staff:
+        return redirect('items:item_list')
+
+    try:
+        item = models.Item.objects.get(id=item_id)
+    except models.Item.DoesNotExist:
+        messages.info(request, "Item already rejected or does not exist.")
+        return redirect('items:dashboard')
+
+    item_name = item.name
+    owner = item.owner
+    # Notify the owner before deleting
+    if owner:
+        create_notification(owner, item, 'item_rejected')
+    item.delete()
+    messages.success(request, f'"{item_name}" has been rejected and removed.')
+    return redirect('items:dashboard')
 
 @login_required
 def get_notifications(request):
@@ -423,3 +576,80 @@ def mark_notification_read(request, notif_id):
         except models.Notification.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Not found'}, status=404)
     return JsonResponse({'status': 'error'}, status=400)
+@login_required
+def submit_claim(request, item_id):
+    item = get_object_or_404(models.Item, id=item_id)
+    
+    # Check if user already claimed this item
+    if models.ClaimRequest.objects.filter(item=item, claimer=request.user).exists():
+        messages.warning(request, "You have already submitted a claim for this item.")
+        return redirect('items:item_detail', pk=item.id)
+
+    if request.method == 'POST':
+        form = ClaimForm(request.POST)
+        if form.is_valid():
+            claim = form.save(commit=False)
+            claim.item = item
+            claim.claimer = request.user
+            claim.save()
+            
+            # Notify item owner
+            if item.owner:
+                create_notification(item.owner, item, 'claim_submitted')
+            
+            # Notify admins
+            for admin in User.objects.filter(is_staff=True):
+                create_notification(admin, item, 'claim_submitted')
+                
+            messages.success(request, "Claim submitted successfully! The finder will review your request.")
+            return redirect('items:item_detail', pk=item.id)
+    else:
+        form = ClaimForm()
+    
+    return render(request, 'items/claim_form.html', {'form': form, 'item': item})
+
+@login_required
+def approve_claim(request, claim_id):
+    claim = get_object_or_404(models.ClaimRequest, id=claim_id)
+    item = claim.item
+    
+    # Permission check: Only item owner or staff can approve
+    if item.owner != request.user and not request.user.is_staff:
+        messages.error(request, "You don't have permission to approve this claim.")
+        return redirect('items:dashboard')
+        
+    # Mark claim as approved
+    claim.status = 'approved'
+    claim.save()
+    
+    # Mark item as claimed
+    item.status = 'claimed'
+    item.save()
+    
+    # Reject other pending claims for this same item
+    models.ClaimRequest.objects.filter(item=item, status='pending').exclude(id=claim.id).update(status='rejected')
+    
+    # Notify claimer
+    create_notification(claim.claimer, item, 'claim_approved')
+    
+    messages.success(request, f"Claim for '{item.name}' approved successfully!")
+    return redirect('items:dashboard')
+
+@login_required
+def reject_claim(request, claim_id):
+    claim = get_object_or_404(models.ClaimRequest, id=claim_id)
+    item = claim.item
+    
+    # Permission check: Only item owner or staff can reject
+    if item.owner != request.user and not request.user.is_staff:
+        messages.error(request, "You don't have permission to reject this claim.")
+        return redirect('items:dashboard')
+        
+    claim.status = 'rejected'
+    claim.save()
+    
+    # Notify claimer
+    create_notification(claim.claimer, item, 'claim_rejected')
+    
+    messages.info(request, f"Claim for '{item.name}' rejected.")
+    return redirect('items:dashboard')

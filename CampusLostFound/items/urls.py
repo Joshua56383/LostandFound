@@ -23,4 +23,9 @@ urlpatterns = [
     path('admin/users/reset-password/<int:user_id>/', views.reset_user_password, name='reset_user_password'),
     path('api/notifications/', views.get_notifications, name='get_notifications'),
     path('api/notifications/read/<int:notif_id>/', views.mark_notification_read, name='mark_notification_read'),
+    path('approve/<int:item_id>/', views.approve_item, name='approve_item'),
+    path('reject/<int:item_id>/', views.reject_item, name='reject_item'),
+    path('claim-submit/<int:item_id>/', views.submit_claim, name='submit_claim'),
+    path('claim-approve/<int:claim_id>/', views.approve_claim, name='approve_claim'),
+    path('claim-reject/<int:claim_id>/', views.reject_claim, name='reject_claim'),
 ]

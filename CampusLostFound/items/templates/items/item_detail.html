@@ -1,4 +1,4 @@
-{% extends 'items/base.html' %}
+﻿{% extends 'items/base.html' %}
 {% load static %}
 
 {% block title %}{{ item.name }} - Retrace{% endblock %}
@@ -99,5 +99,19 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Claim Item Action -->
+    {% if item.status == 'found' and request.user != item.owner %}
+    <div style="margin-top: 24px; text-align: center;">
+        <a href="{% url 'items:submit_claim' item.id %}" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px; justify-content: center; box-shadow: var(--shadow-lg);">
+            <i data-lucide="hand-helping" style="width: 20px; height: 20px;"></i>
+            Claim This Item
+        </a>
+        <p style="margin-top: 12px; font-size: 13px; color: var(--text-muted);">
+            You will be asked to provide proof of ownership.
+        </p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
+

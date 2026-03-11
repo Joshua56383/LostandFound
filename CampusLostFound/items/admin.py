@@ -5,10 +5,10 @@ from . import ai_service
 
 
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'status', 'category', 'location', 'owner', 'date_reported')
-    list_filter = ('status', 'category')
+    list_display = ('name', 'status', 'category', 'location', 'owner', 'is_approved', 'date_reported')
+    list_filter = ('status', 'category', 'is_approved')
     search_fields = ('name', 'description', 'location')
-    list_editable = ('status',)
+    list_editable = ('status', 'is_approved')
 
     def save_model(self, request, obj, form, change):
         """When an admin changes an item's status, send an AI notification."""

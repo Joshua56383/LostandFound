@@ -1,4 +1,4 @@
-{% extends 'items/base.html' %}
+﻿{% extends 'items/base.html' %}
 {% load static %}
 
 {% block title %}My Dashboard - Retrace{% endblock %}
@@ -95,6 +95,36 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Items Table -->
                 <div class="lg:col-span-2 space-y-6">
+                    
+                    {% if pending_claims %}
+                    <!-- Claim Requests -->
+                    <div class="bg-indigo-50/50 rounded-3xl border border-indigo-100/50 p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-extrabold text-[#0f172a] flex items-center gap-2">
+                                 <i data-lucide="hand-helping" class="w-5 h-5 text-indigo-600"></i>
+                                 Pending Claims
+                            </h3>
+                            <span class="px-3 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-bold uppercase">{{ pending_claims.count }} To Review</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for claim in pending_claims %}
+                            <div class="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm hover:shadow-md transition-all">
+                                <div class="flex justify-between items-start gap-4">
+                                    <div class="flex-1">
+                                        <p class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">{{ claim.item.name }}</p>
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">Claim by @{{ claim.claimer.username }}</p>
+                                        <p class="text-xs text-gray-500 line-clamp-2 italic">"{{ claim.message }}"</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <a href="{% url 'items:approve_claim' claim.id %}" class="px-3 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-emerald-700">Approve</a>
+                                        <a href="{% url 'items:reject_claim' claim.id %}" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-bold uppercase transition-all hover:bg-gray-200">Reject</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-extrabold text-gray-900 flex items-center gap-2">
                              <i data-lucide="package" class="w-5 h-5 text-indigo-500"></i>
@@ -190,3 +220,4 @@
     </main>
 </div>
 {% endblock %}
+

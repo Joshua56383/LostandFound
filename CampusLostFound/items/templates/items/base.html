@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -129,7 +129,9 @@
                                     </div>
                                 </template>
                                 <template x-for="notif in notifications" :key="notif.id">
-                                    <div class="p-4 hover:bg-gray-50 transition-colors flex gap-3 relative group">
+                                    <a :href="notif.item_id ? '/' + notif.item_id + '/' : '#'"
+                                        @click="markAsRead(notif.id)"
+                                        class="p-4 hover:bg-gray-50 transition-colors flex gap-3 relative group border-b border-gray-50 last:border-0">
                                         <div
                                             class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
                                             <i data-lucide="zap" class="w-4 h-4"></i>
@@ -142,12 +144,12 @@
                                                 <span x-text="notif.time_ago"></span>
                                             </p>
                                         </div>
-                                        <button @click.stop="markAsRead(notif.id)"
+                                        <button @click.prevent.stop="markAsRead(notif.id)"
                                             class="absolute right-3 top-4 text-gray-300 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
                                             title="Mark as read">
                                             <i data-lucide="check" class="w-4 h-4"></i>
                                         </button>
-                                    </div>
+                                    </a>
                                 </template>
                             </div>
                         </div>
