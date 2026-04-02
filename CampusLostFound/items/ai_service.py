@@ -1,69 +1,110 @@
 import os
-import google.generativeai as genai
+from google import genai
+from openai import OpenAI
 from django.core.cache import cache
 from dotenv import load_dotenv
+from PIL import Image
+import sys
 
 # Load environment variables
 load_dotenv()
 
-# Configure Gemini once
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
+# Configure APIs
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+gemini_client = None
+if gemini_api_key:
+    gemini_client = genai.Client(api_key=gemini_api_key)
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+client = None
+if openai_api_key:
+    client = OpenAI(api_key=openai_api_key)
 
 
 def generate_notification_message(item, status):
     """
-    Generate a dynamic notification message using Gemini AI.
+    Generate a dynamic notification message using AI (OpenAI primary, Gemini fallback).
     """
 
-    # 1. Check cache
+    # 1. Check if we're running tests to avoid API limits
+    import sys
+    if 'test' in sys.argv:
+        return _generate_fallback_message(item, status)
+
+    # 1b. Check cache
     cache_key = f"ai_notif_{item.id}_{status}"
     cached_msg = cache.get(cache_key)
     if cached_msg:
         return cached_msg
 
-    # 2. If no API key → fallback
-    if not api_key:
-        return _generate_fallback_message(item, status)
+    # 2. Try OpenAI
+    if client:
+        try:
+            model_name = os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini")
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are an AI assistant for a Lost and Found Management System. Write a short notification message (1–2 sentences)."},
+                    {"role": "user", "content": f"Item Name: {item.name}\nCategory: {item.category}\nLocation: {item.location}\nDescription: {item.description}\nStatus: {status}\nDate Reported: {item.date_reported}\n\nGenerate only the notification message."}
+                ],
+                max_tokens=100
+            )
+            ai_message = response.choices[0].message.content.strip()
+            if ai_message:
+                cache.set(cache_key, ai_message, timeout=86400)
+                return ai_message
+        except Exception as e:
+            print(f"OpenAI API Error: {e}")
+
+    # 3. Try Gemini fallback
+    if gemini_client:
+        try:
+            model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+            prompt = f"You are an AI assistant for a Lost and Found Management System. Write a short notification message (1–2 sentences).\n\nItem Name: {item.name}\nCategory: {item.category}\nLocation: {item.location}\nDescription: {item.description}\nStatus: {status}\nDate Reported: {item.date_reported}\n\nGenerate only the notification message."
+            
+            response = gemini_client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            ai_message = response.text.strip()
+            if ai_message:
+                cache.set(cache_key, ai_message, timeout=86400)
+                return ai_message
+        except Exception as e:
+            if "429" in str(e):
+                print(f"Gemini API Quota Exceeded (429): {e}")
+            else:
+                print(f"Gemini API Error: {e}")
+
+    # 4. Final fallback
+    return _generate_fallback_message(item, status)
+
+
+def extract_image_tags(image_path):
+    """
+    Extract visual tags from an image using Gemini Vision.
+    """
+    if 'test' in sys.argv:
+        return "test, image, tags"
+
+    if not gemini_client:
+        return ""
 
     try:
-        # 3. Create model
-        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
-        model = genai.GenerativeModel(model_name)
-
-        # 4. Prompt
-        prompt = f"""
-You are an AI assistant for a Lost and Found Management System.
-
-Write a short notification message (1–2 sentences).
-
-Item Name: {item.name}
-Category: {item.category}
-Location: {item.location}
-Description: {item.description}
-Status: {status}
-Date Reported: {item.date_reported}
-
-Generate only the notification message.
-"""
-
-        # 5. Generate content
-        response = model.generate_content(prompt)
-
-        ai_message = response.text.strip()
-
-        if not ai_message:
-            raise ValueError("Empty response from Gemini")
-
-        # 6. Cache result (24 hours)
-        cache.set(cache_key, ai_message, timeout=86400)
-
-        return ai_message
-
+        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+        
+        with Image.open(image_path) as img:
+            prompt = "Identify the main object, color, brand, and any distinctive features in this image. Return 5 to 10 comma-separated keywords (e.g. 'black, leather, wallet, expensive')."
+            
+            response = gemini_client.models.generate_content(
+                model=model_name,
+                contents=[prompt, img]
+            )
+            
+            return response.text.strip()
     except Exception as e:
-        print(f"Gemini API Error: {e}")
-        return _generate_fallback_message(item, status)
+        print(f"Gemini Vision Error: {e}")
+        return ""
 
 
 def _generate_fallback_message(item, status):

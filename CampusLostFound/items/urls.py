@@ -1,4 +1,4 @@
-app_name = 'items'  # THIS MUST BE AT THE TOP
+app_name = 'items'
 
 from django.urls import path
 from . import views
@@ -7,13 +7,17 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('admin/users/', views.user_directory, name='user_directory'),
     path('admin/analytics/', views.admin_analytics, name='admin_analytics'),
+    path('admin/analytics/api/', views.analytics_api, name='analytics_api'),
     path('admin/logs/', views.audit_logs, name='audit_logs'),
+    path('admin/trash/', views.trash_view, name='trash'),
     path('', views.item_list, name='item_list'),
-    path('add/', views.add_item, name='add_item'),
+    path('add/', views.report_item, name='add_item'),
     path('report/<str:status>/', views.report_item, name='report_item'),
     path('<int:pk>/', views.item_detail, name='item_detail'),
     path('edit/<int:pk>/', views.edit_item, name='edit_item'),
     path('delete/<int:pk>/', views.delete_item, name='delete_item'),
+    path('renew/<int:pk>/', views.renew_item, name='renew_item'),
+    path('restore/<int:pk>/', views.restore_item, name='restore_item'),
     path('profile/', views.profile, name='profile'),
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('claim/<int:item_id>/', views.claim_item, name='claim_item'),
@@ -28,4 +32,11 @@ urlpatterns = [
     path('claim-submit/<int:item_id>/', views.submit_claim, name='submit_claim'),
     path('claim-approve/<int:claim_id>/', views.approve_claim, name='approve_claim'),
     path('claim-reject/<int:claim_id>/', views.reject_claim, name='reject_claim'),
+    path('export/csv/', views.export_csv, name='export_csv'),
+    path('bulk-approve/', views.bulk_approve, name='bulk_approve'),
+    path('bulk-reject/', views.bulk_reject, name='bulk_reject'),
+    path('inbox/', views.inbox, name='inbox'),
+    path('messages/<int:user_id>/', views.conversation, name='conversation'),
+    path('api/messages/send/', views.send_message_api, name='send_message_api'),
+    path('media/<path:file_path>', views.serve_private_file, name='serve_private_file'),
 ]

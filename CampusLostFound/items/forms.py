@@ -3,12 +3,19 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Item, UserProfile, ClaimRequest
 
-class ItemForm(forms.ModelForm):
+class BaseStyledForm(forms.BaseForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if 'class' not in field.widget.attrs:
+                field.widget.attrs.update({'class': 'input'})
+
+class ItemForm(forms.ModelForm, BaseStyledForm):
     class Meta:
         model = Item
         fields = ['name', 'description', 'category', 'location', 'status', 'contact_name', 'contact_email', 'image']
 
-class ClaimForm(forms.ModelForm):
+class ClaimForm(forms.ModelForm, BaseStyledForm):
     class Meta:
         model = ClaimRequest
         fields = ['message']
@@ -16,44 +23,28 @@ class ClaimForm(forms.ModelForm):
             'message': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Provide proof of ownership (e.g., unique marks, what\'s inside, or where exactly you lost it).'}),
         }
 
-class UserUpdateForm(forms.ModelForm):
+class UserUpdateForm(forms.ModelForm, BaseStyledForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'input'})
-
-
-class UserProfileForm(forms.ModelForm):
+class UserProfileForm(forms.ModelForm, BaseStyledForm):
     class Meta:
         model = UserProfile
         fields = ['bio', 'avatar']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'input'})
-
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 
-# Relax default username validator to allow spaces
+# Relax default username validator to allow spaces on the form
 relaxed_username_validator = RegexValidator(
     r'^[\w.@+\- ]+$',
     'Enter a valid username. This value may contain only letters, numbers, spaces, and @/./+/-/_ characters.',
     'invalid'
 )
-# Patch the User model
-username_field = User._meta.get_field('username')
-if username_field.validators:
-    username_field.validators[0] = relaxed_username_validator
-username_field.help_text = "Required. 150 characters or fewer. Letters, digits, spaces, and @/./+/-/_ only."
 
 
-class CustomUserCreationForm(UserCreationForm):
+class CustomUserCreationForm(UserCreationForm, BaseStyledForm):
     username = forms.CharField(
         max_length=150,
         help_text="Required. 150 characters or fewer. You may use spaces.",
@@ -78,23 +69,15 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         fields = ("username", "email")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'input'})
-            
     def save(self, commit=True):
         user = super().save(commit=commit)
         if commit:
-            from items.models import UserProfile
-            # Check if UserProfile already created via signals, otherwise create new
-            profile, created = UserProfile.objects.get_or_create(user=user)
+            # Profile is created by signals, we just update it
+            profile = user.userprofile
             profile.student_staff_id = self.cleaned_data.get('student_staff_id')
             profile.user_type = self.cleaned_data.get('user_type')
             profile.save()
         return user
-class CustomAuthenticationForm(AuthenticationForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'input'})
+
+class CustomAuthenticationForm(AuthenticationForm, BaseStyledForm):
+    pass

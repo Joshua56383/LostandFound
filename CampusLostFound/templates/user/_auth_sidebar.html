@@ -1,0 +1,48 @@
+{% load static %}
+<div class="hidden md:flex md:w-1/2 relative bg-gray-900 flex-col justify-between p-12 overflow-hidden text-white">
+    <!-- Background Image -->
+    <div class="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop"
+            alt="Campus Building" class="w-full h-full object-cover opacity-50 mix-blend-overlay">
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/60 to-gray-900/40"></div>
+    </div>
+
+    <!-- Top: Logo -->
+    <div class="relative z-10 flex items-center gap-3 w-fit hover:opacity-90 transition-opacity">
+        <div
+            class="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 shadow-lg">
+            <i data-lucide="package" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-bold text-lg tracking-tight">Campus Lost & Found</span>
+    </div>
+
+    <!-- Middle: Hero Text & Badges -->
+    <div class="relative z-10 max-w-lg mt-auto mb-20">
+        <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight mb-6 leading-[1.15]">
+            Reuniting students with their belongings
+        </h1>
+        <p class="text-lg text-gray-300 mb-10 leading-relaxed font-medium">
+            Report lost items, browse found listings, and connect with your campus community.
+        </p>
+
+        <div class="flex flex-wrap gap-3">
+            <div
+                class="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium">
+                <i data-lucide="search" class="w-4 h-4"></i> Smart Search
+            </div>
+            <div
+                class="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium">
+                <i data-lucide="map-pin" class="w-4 h-4"></i> Campus Locations
+            </div>
+            <div
+                class="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium">
+                <i data-lucide="package" class="w-4 h-4"></i> Item Tracking
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: Copyright -->
+    <div class="relative z-10 text-sm text-gray-400 font-medium">
+        &copy; {% now "Y" %} Campus Lost & Found &middot; All rights reserved
+    </div>
+</div>

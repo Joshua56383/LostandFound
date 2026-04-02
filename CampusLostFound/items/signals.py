@@ -21,5 +21,27 @@ if hasattr(models, 'UserProfile'):
 
     @receiver(post_save, sender=User)
     def save_user_profile(sender, instance, **kwargs):
-        if hasattr(instance, 'profile'):
-            instance.profile.save()
+        if hasattr(instance, 'userprofile'):
+            instance.userprofile.save()
+
+@receiver(post_save, sender=models.Item)
+def track_item_upload(sender, instance, **kwargs):
+    """Save a record of uploaded item images."""
+    if instance.image and hasattr(instance, 'owner') and instance.owner:
+        if not models.UploadedFile.objects.filter(file=instance.image.name).exists():
+            models.UploadedFile.objects.create(
+                file=instance.image,
+                uploader=instance.owner,
+                role=instance.owner.userprofile.user_type
+            )
+
+@receiver(post_save, sender=models.UserProfile)
+def track_avatar_upload(sender, instance, **kwargs):
+    """Save a record of uploaded avatars."""
+    if instance.avatar:
+        if not models.UploadedFile.objects.filter(file=instance.avatar.name).exists():
+            models.UploadedFile.objects.create(
+                file=instance.avatar,
+                uploader=instance.user,
+                role=instance.user_type
+            )

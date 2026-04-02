@@ -1,8 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import Item, UserLoginLog, ClaimRequest
+from .models import Item, UserLoginLog, ClaimRequest, UserProfile
 from .forms import ItemForm
+from django.core import mail
 
 class ItemModelTest(TestCase):
     def setUp(self):
@@ -39,7 +40,7 @@ class DashboardViewTest(TestCase):
         self.client.login(username='admin_user', password='password123')
         response = self.client.get(reverse('items:dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'items/dashboard.html')
+        self.assertTemplateUsed(response, 'user/dashboard.html')
 
     def test_dashboard_view_unauthenticated(self):
         response = self.client.get(reverse('items:dashboard'))
@@ -268,3 +269,92 @@ class ItemFormTest(TestCase):
         }
         form = ItemForm(data=data)
         self.assertFalse(form.is_valid())
+
+
+class RBACTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        
+        # Create users
+        self.student = User.objects.create_user(username='student', password='password123')
+        self.admin_user = User.objects.create_user(username='admin_user', password='password123')
+        self.superadmin_user = User.objects.create_user(username='superadmin_user', password='password123')
+        
+        # Set user types in profiles
+        self.student.userprofile.user_type = 'student'
+        self.student.userprofile.save()
+        
+        self.admin_user.userprofile.user_type = 'admin'
+        self.admin_user.userprofile.save()
+        
+        self.superadmin_user.userprofile.user_type = 'superadmin'
+        self.superadmin_user.userprofile.save()
+
+    def test_superadmin_access(self):
+        self.client.login(username='superadmin_user', password='password123')
+        # Should access User Directory
+        response = self.client.get(reverse('items:user_directory'))
+        self.assertEqual(response.status_code, 200)
+        # Should access Analytics
+        response = self.client.get(reverse('items:admin_analytics'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_access_restrictions(self):
+        self.client.login(username='admin_user', password='password123')
+        # Should NOT access User Directory
+        response = self.client.get(reverse('items:user_directory'))
+        self.assertEqual(response.status_code, 403) # PermissionDenied raises 403
+        # Should NOT access Analytics
+        response = self.client.get(reverse('items:admin_analytics'))
+        self.assertEqual(response.status_code, 403)
+        
+        # Should access a Dashboard (assuming it's allowed for admin)
+        response = self.client.get(reverse('items:dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_student_access_restrictions(self):
+        self.client.login(username='student', password='password123')
+        # Should NOT access User Directory
+        response = self.client.get(reverse('items:user_directory'))
+        self.assertEqual(response.status_code, 403)
+        # Should NOT access Dashboard (standard dashboard is @login_required but check internal logic)
+        # However, the decorators are applied to specific admin views.
+        
+    def test_unauthenticated_access(self):
+        # Should redirect to login
+        response = self.client.get(reverse('items:user_directory'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response.url)
+
+
+
+class PasswordResetTemplateTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', email='test@example.com', password='password123')
+        self.client = Client()
+
+    def test_password_reset_templates(self):
+        # 1. Post to password reset
+        response = self.client.post(reverse('password_reset'), {'email': 'test@example.com'})
+        
+        # Check if email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Password reset on Campus Lost & Found')
+        
+        # Check redirect
+        self.assertRedirects(response, reverse('login') + '?reset_sent=1')
+        
+        # 2. Check login page with reset_sent
+        response = self.client.get(reverse('login'), {'reset_sent': '1'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Email Sent')
+        
+    def test_password_reset_confirm_template(self):
+        # We need a valid uid and token, but we can just check if the view loads
+        # PasswordResetConfirmView needs uidb64 and token.
+        # For simplicity, we just check if reverse works and it doesn't crash on GET (invalid link)
+        url = reverse('password_reset_confirm', kwargs={'uidb64': 'NA', 'token': 'set-password'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Invalid Link')
+

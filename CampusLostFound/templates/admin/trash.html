@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Portal - Trash{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-[#f8fafc] overflow-hidden font-sans" x-data="{ sidebarOpen: true }">
+
+    {% include 'admin/_admin_sidebar.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top Bar -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <nav class="flex items-center gap-2 text-sm font-medium">
+                <a href="{% url 'items:dashboard' %}" class="text-indigo-600 hover:underline">Admin</a>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                <span class="text-gray-900">Trash</span>
+            </nav>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 leading-none">System Admin</span>
+                    <span class="text-[11px] text-gray-400 mt-0.5">{{ request.user.email }}</span>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    {{ request.user.username|slice:":2"|upper }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Trash</h2>
+                <p class="text-gray-500 font-medium text-lg mt-1">
+                    Deleted items are stored here. You can restore them if needed.
+                </p>
+            </div>
+
+            {% if deleted_items %}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100">
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Item</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Deleted By</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Deleted At</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for item in deleted_items %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                                        <i data-lucide="trash-2" class="w-5 h-5 text-gray-400"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-sm">{{ item.name }}</p>
+                                        <p class="text-xs text-gray-400 truncate max-w-[200px]">{{ item.description|truncatewords:8 }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{{ item.category|default:"—" }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                {{ item.owner.username|default:"Unknown" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ item.deleted_at|date:"M d, Y H:i" }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <form method="post" action="{% url 'items:restore_item' item.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
+                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                        Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+                <i data-lucide="trash-2" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Trash is Empty</h3>
+                <p class="text-gray-500 text-sm">Deleted items will appear here and can be restored.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

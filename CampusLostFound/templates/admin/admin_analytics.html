@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Portal - Analytics{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-[#f8fafc] overflow-hidden font-sans" x-data="{ sidebarOpen: true }">
+
+    {% include 'admin/_admin_sidebar.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top Bar -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <nav class="flex items-center gap-2 text-sm font-medium">
+                <a href="{% url 'items:dashboard' %}" class="text-indigo-600 hover:underline">Admin</a>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                <span class="text-gray-900">Analytics</span>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <!-- Export CSV Button -->
+                <a href="{% url 'items:export_csv' %}"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Export CSV
+                </a>
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-bold text-gray-900 leading-none">System Admin</span>
+                    <span class="text-[11px] text-gray-400 mt-0.5">{{ request.user.email }}</span>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    {{ request.user.username|slice:":2"|upper }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-8">
+            <!-- Page Heading -->
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">System Analytics</h2>
+                <p class="text-gray-500 font-medium text-lg mt-1">Real-time insights and platform performance metrics.</p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total Items -->
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="package" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Volume</p>
+                            <p class="text-2xl font-black text-gray-900">{{ total_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lost Items -->
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center border border-red-100">
+                            <i data-lucide="circle-alert" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Lost</p>
+                            <p class="text-2xl font-black text-gray-900">{{ lost_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Found Items -->
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100">
+                            <i data-lucide="circle-check" class="w-6 h-6 text-emerald-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Found</p>
+                            <p class="text-2xl font-black text-gray-900">{{ found_items }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Rate -->
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-full blur-3xl -mr-12 -mt-12"></div>
+                    <div class="relative z-10 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center border border-amber-100">
+                            <i data-lucide="award" class="w-6 h-6 text-amber-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Success Rate</p>
+                            <p class="text-2xl font-black text-gray-900">{{ success_rate|floatformat:1 }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-3 mb-1">
+                        <i data-lucide="users" class="w-5 h-5 text-indigo-500"></i>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Users</p>
+                    </div>
+                    <p class="text-2xl font-black text-gray-900">{{ total_users }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ active_users }} active</p>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-3 mb-1">
+                        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Resolved Items</p>
+                    </div>
+                    <p class="text-2xl font-black text-gray-900">{{ resolved_items }}</p>
+                    <p class="text-xs text-gray-400 mt-1">of {{ total_items }} total</p>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-3 mb-1">
+                        <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Avg Resolution Time</p>
+                    </div>
+                    <p class="text-2xl font-black text-gray-900">
+                        {% if avg_resolution_days != None %}{{ avg_resolution_days }} days{% else %}N/A{% endif %}
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">from report to claim</p>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Activity Trends Chart (Real Data) -->
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Activity Trends</h3>
+                            <p class="text-xs text-gray-400 font-medium">Monthly reporting volume</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Reported
+                            </span>
+                            <span class="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Resolved
+                            </span>
+                        </div>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Category Distribution (Real Data) -->
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Category Distribution</h3>
+                            <p class="text-xs text-gray-400 font-medium">Most common reported items</p>
+                        </div>
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-gray-300"></i>
+                    </div>
+
+                    {% if category_stats %}
+                    <div class="space-y-5">
+                        {% for cat in category_stats %}
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-gray-700">{{ cat.name }}</span>
+                                <span class="text-gray-400">{{ cat.count }} ({{ cat.percentage }}%)</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
+                                <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: {{ cat.percentage }}%;"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-12 text-gray-400">
+                        <i data-lucide="bar-chart-3" class="w-10 h-10 mx-auto mb-2 text-gray-300"></i>
+                        <p class="text-sm font-medium">No category data yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Location Hotspots -->
+            <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Location Hotspots</h3>
+                        <p class="text-xs text-gray-400 font-medium">Where items are most frequently lost or found</p>
+                    </div>
+                    <i data-lucide="map-pin" class="w-5 h-5 text-gray-300"></i>
+                </div>
+
+                {% if location_stats %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for loc in location_stats %}
+                    <div class="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shrink-0">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-900">{{ loc.name }}</p>
+                            <p class="text-xs text-gray-400">{{ loc.count }} item{{ loc.count|pluralize }}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-indigo-600">{{ loc.percentage }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12 text-gray-400">
+                    <i data-lucide="map" class="w-10 h-10 mx-auto mb-2 text-gray-300"></i>
+                    <p class="text-sm font-medium">No location data yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activity Trends Chart - Real Data from Django Context
+    const months = {{ months_labels|safe }};
+    const reportedData = {{ reported_counts|safe }};
+    const resolvedData = {{ resolved_counts|safe }};
+
+    if (months.length > 0) {
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Reported',
+                        data: reportedData,
+                        backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                        borderColor: 'rgb(99, 102, 241)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    },
+                    {
+                        label: 'Resolved',
+                        data: resolvedData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1f2937',
+                        titleFont: { weight: 'bold', size: 12 },
+                        bodyFont: { size: 11 },
+                        cornerRadius: 8,
+                        padding: 10,
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10, weight: 'bold' }, color: '#9ca3af' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f3f4f6' },
+                        ticks: {
+                            font: { size: 10, weight: 'bold' },
+                            color: '#9ca3af',
+                            stepSize: 1,
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('activityChart').parentElement.innerHTML =
+            '<div class="flex items-center justify-center h-full text-gray-400">' +
+            '<div class="text-center"><p class="text-sm font-medium">No activity data yet</p>' +
+            '<p class="text-xs mt-1">Charts will populate as items are reported.</p></div></div>';
+    }
+});
+</script>
+{% endblock %}

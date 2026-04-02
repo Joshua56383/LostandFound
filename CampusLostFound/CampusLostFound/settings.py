@@ -27,10 +27,12 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 import os
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-k!uex(sbskj4u-dfhkqkn%71msx^79^nhbbpunohjiu*yzao^l')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in the .env file")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -75,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'CampusLostFound.context_processors.auth_partial_processor',
             ],
         },
     },
@@ -128,10 +131,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+PRIVATE_STORAGE_ROOT = BASE_DIR / 'private_media'
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'items:dashboard'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
 
 # Use BigAutoField for automatic primary keys by default
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

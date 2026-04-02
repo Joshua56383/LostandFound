@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat with @{{ other_user.username }} - Retrace{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chat-bubble {
+        max-width: 80%;
+        margin-bottom: 1rem;
+        padding: 1rem 1.25rem;
+        border-radius: 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        position: relative;
+    }
+    .chat-bubble-sent {
+        background-color: #4f46e5;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 0.25rem;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+    .chat-bubble-received {
+        background-color: #f1f5f9;
+        color: #1e293b;
+        margin-right: auto;
+        border-bottom-left-radius: 0.25rem;
+    }
+    .chat-system {
+        background-color: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        margin: 1.5rem auto;
+        text-align: center;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.5rem 1rem;
+        max-width: 90%;
+    }
+    #chat-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    #chat-container::-webkit-scrollbar-thumb {
+        background-color: #e2e8f0;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-[#f8fafc] overflow-hidden font-sans" x-data="chatHandler()">
+    
+    <!-- Using a simplified sidebar -->
+    <aside class="w-64 bg-[#0f172a] text-white flex flex-col shrink-0 hidden md:flex">
+        <div class="p-6 flex items-center gap-3 border-b border-white/5">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="message-square" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Messages</h1>
+                <p class="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Secure Chat</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 py-8 space-y-2">
+            <a href="{% url 'items:inbox' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="font-bold text-sm">Back to Inbox</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 bg-white">
+        <!-- Chat Header -->
+        <header class="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    {{ other_user.username|slice:":2"|upper }}
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-gray-900 leading-none">@{{ other_user.username }}</h2>
+                    <p class="text-[10px] text-emerald-500 font-bold flex items-center gap-1 mt-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages Container -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-2 bg-[#fdfdfd]" x-init="$nextTick(() => $el.scrollTop = $el.scrollHeight)">
+            {% for msg in messages_list %}
+                {% if "SYSTEM:" in msg.content %}
+                    <div class="chat-system">
+                        {{ msg.content|replace:"SYSTEM: " }}
+                        <div class="text-[9px] mt-1 opacity-60 text-amber-600">{{ msg.created_at|date:"H:i" }}</div>
+                    </div>
+                {% elif msg.sender == request.user %}
+                    <div class="chat-bubble chat-bubble-sent">
+                        <p>{{ msg.content }}</p>
+                        <div class="text-[9px] mt-1.5 text-indigo-200 font-bold text-right">{{ msg.created_at|date:"H:i" }}</div>
+                    </div>
+                {% else %}
+                    <div class="chat-bubble chat-bubble-received">
+                        <p>{{ msg.content }}</p>
+                        <div class="text-[9px] mt-1.5 text-gray-400 font-bold">{{ msg.created_at|date:"H:i" }}</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div id="message-anchor"></div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="p-6 border-t border-gray-100 bg-white shrink-0">
+            <form @submit.prevent="sendMessage()" class="flex items-center gap-4">
+                <div class="flex-1 relative">
+                    <input type="text" x-model="newMessage" placeholder="Type your message here..." 
+                        class="w-full pl-6 pr-12 py-4 bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl text-sm font-medium transition-all focus:ring-0">
+                    <button type="submit" :disabled="!newMessage.trim() || sending"
+                        class="absolute right-3 top-2 w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:grayscale">
+                        <i data-lucide="send" class="w-4 h-4" x-show="!sending"></i>
+                        <svg x-show="sending" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </div>
+            </form>
+            <p class="text-[10px] text-gray-400 text-center mt-3 font-medium italic">Your conversation is secure and private.</p>
+        </div>
+    </main>
+</div>
+
+<script>
+function chatHandler() {
+    return {
+        newMessage: '',
+        sending: false,
+        sendMessage() {
+            if (!this.newMessage.trim() || this.sending) return;
+            
+            this.sending = true;
+            const formData = new FormData();
+            formData.append('recipient_id', '{{ other_user.id }}');
+            formData.append('content', this.newMessage);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch('{% url "items:send_message_api" %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.appendMessage(data.message.content, data.message.created_at);
+                    this.newMessage = '';
+                }
+            })
+            .finally(() => {
+                this.sending = false;
+            });
+        },
+        appendMessage(content, time) {
+            const container = document.getElementById('chat-container');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble chat-bubble-sent';
+            bubble.innerHTML = `<p>${content}</p><div class="text-[9px] mt-1.5 text-indigo-200 font-bold text-right">${time}</div>`;
+            container.insertBefore(bubble, document.getElementById('message-anchor'));
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+}
+</script>
+{% endblock %}

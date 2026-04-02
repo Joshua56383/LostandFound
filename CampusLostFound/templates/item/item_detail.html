@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ item.name }} - Retrace{% endblock %}
+
+{% block extra_head %}
+<!-- Custom Styles -->
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container" style="max-width: 800px;">
+    <!-- Brand / Back Navigation -->
+    <div class="mb-6">
+        <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 6px 14px; font-size: 13px;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Browse
+        </a>
+    </div>
+
+    <!-- Main Detail Card -->
+    <div class="card-modern" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+        <!-- Hero Image -->
+        {% if item.image %}
+        <div style="width: 100%; height: 400px; background: #f1f5f9; position: relative;">
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; top: 16px; left: 16px;">
+                <span class="badge {% if item.status == 'lost' %}badge-orange{% else %}badge-green{% endif %}"
+                    style="padding: 6px 12px; font-size: 12px; box-shadow: var(--shadow-md);">
+                    {{ item.get_status_display }}
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div
+            style="width: 100%; height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: var(--text-muted); border-bottom: 1px solid var(--border);">
+            <div class="text-center">
+                <i data-lucide="image" style="width: 48px; height: 48px; margin-bottom: 8px;"></i>
+                <p style="font-size: 14px;">No image available</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="padding: 32px;">
+            <div class="flex-between mb-4">
+                <h1 style="font-size: 2.25rem; letter-spacing: -0.02em;">{{ item.name }}</h1>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="badge badge-blue" style="border-radius: 6px;">{{ item.category|default:"General" }}</div>
+                    {% if item.status != 'claimed' and request.user != item.owner %}
+                    <a href="{% url 'items:submit_claim' item.id %}" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
+                        <i data-lucide="hand-helping" style="width: 16px; height: 16px;"></i>
+                        Claim Item
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p style="font-size: 1.125rem; color: var(--text-muted); margin-bottom: 32px; line-height: 1.7;">
+                {{ item.description }}
+            </p>
+
+            <!-- Metadata Grid -->
+            <div
+                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <div>
+                    <div class="form-label" style="text-transform: uppercase;">Location</div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i data-lucide="map-pin" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                        {{ item.location }}
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="text-transform: uppercase;">Reported Date</div>
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                        {{ item.date_reported|date:"F d, Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Match Suggestions -->
+    {% if ai_suggestions %}
+    <div class="card-modern" style="margin-top: 24px; border-top: 4px solid var(--indigo);">
+        <h3 class="mb-4" style="display: flex; align-items: center; gap: 8px; color: var(--indigo);">
+            <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+            AI Match Suggestions
+        </h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Our AI identified these similar items in the system:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+            {% for match in ai_suggestions %}
+            <a href="{% url 'items:item_detail' match.id %}" class="card-item-mini" style="text-decoration: none; display: block; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.2s;">
+                <div style="height: 100px; background: #f8fafc;">
+                    {% if match.image %}
+                    <img src="{{ match.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><i data-lucide="image" style="color: #cbd5e1;"></i></div>
+                    {% endif %}
+                </div>
+                <div style="padding: 10px;">
+                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dark); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ match.name }}</p>
+                    <p style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">{{ match.location }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Contact Section -->
+    <div class="card-modern" style="margin-top: 24px; border-left: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="user-check" style="width: 20px; height: 20px; color: var(--primary);"></i>
+                Contact Information
+            </h3>
+            
+            {% if request.user.is_authenticated and request.user != item.owner %}
+            <a href="{% url 'items:conversation' item.owner.id %}" class="btn btn-primary" style="background: var(--indigo); border-color: var(--indigo);">
+                <i data-lucide="message-circle" style="width: 16px; height: 16px;"></i>
+                Message Finder
+            </a>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 64px; margin-top: 24px;">
+            {% if item.contact_name %}
+            <div>
+                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Reporter</div>
+                <div style="font-weight: 700; color: var(--text-dark);">{{ item.contact_name }}</div>
+            </div>
+            {% endif %}
+            
+            <div>
+                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Identity Verification</div>
+                <div style="display: flex; align-items: center; gap: 6px; color: var(--emerald); font-weight: 700; font-size: 14px;">
+                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                    ID Verified
+                </div>
+            </div>
+
+            {% if item.contact_email %}
+            <div>
+                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Privacy Status</div>
+                <div style="font-weight: 600; color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+                    Email Hidden for Privacy
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Claim Info Note -->
+    {% if item.status != 'claimed' and request.user != item.owner %}
+    <div style="margin-top: 32px; text-align: center; background: #fffbeb; padding: 16px; border-radius: 16px; border: 1px solid #fde68a;">
+        <p style="font-size: 13px; color: #92400e; font-weight: 500;">
+            <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></i>
+            You will be asked to provide proof of ownership via secure message when claiming this item.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
