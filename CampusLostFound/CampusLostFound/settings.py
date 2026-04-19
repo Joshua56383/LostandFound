@@ -12,7 +12,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import certifi
 from dotenv import load_dotenv
+
+# Fix SSL certificate verification on Windows
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,7 +38,27 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# ALLOWED_HOSTS: Controls which hostnames Django will serve.
+# Wildcard added to facilitate seamless ngrok tunneling.
+ALLOWED_HOSTS = ['*']
+
+# Base URL for the site, explicitly set to user ngrok tunnel
+SITE_URL = 'https://fernanda-intercurrent-susana.ngrok-free.dev'
+
+# Required for POST/form submissions over HTTPS via Ngrok
+CSRF_TRUSTED_ORIGINS = [
+    'https://fernanda-intercurrent-susana.ngrok-free.dev',
+    'https://*.ngrok-free.dev',
+    'https://*.ngrok.io',
+    'https://*.ngrok-free.app',
+    'https://*.app.ngrok.io',
+]
+
+# Tell Django to trust the X-Forwarded-Proto header for HTTPS detection via Ngrok
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Use the X-Forwarded-Host header for building absolute URLs
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
@@ -64,6 +88,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 ROOT_URLCONF = 'CampusLostFound.urls'
 
 
@@ -78,6 +104,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'CampusLostFound.context_processors.auth_partial_processor',
+                'CampusLostFound.context_processors.global_counts_processor',
+                'CampusLostFound.context_processors.site_url_processor',
             ],
         },
     },
@@ -133,12 +161,18 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 PRIVATE_STORAGE_ROOT = BASE_DIR / 'private_media'
 
-LOGIN_REDIRECT_URL = 'items:dashboard'
+LOGIN_REDIRECT_URL = 'items:item_list'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
 
 # Use BigAutoField for automatic primary keys by default
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration (SMTP)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'Campus Lost & Found <joshuajacinto10272005@gmail.com>'

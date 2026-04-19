@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Item No Longer Available - DMMMSU Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-24 px-6 text-center">
+    <!-- Icon Container -->
+    <div class="mb-12 relative inline-block">
+        <div class="w-32 h-32 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 mx-auto transition-transform hover:rotate-6">
+            <i data-lucide="package-search" class="w-16 h-16"></i>
+        </div>
+        <div class="absolute -top-2 -right-2 w-10 h-10 bg-white rounded-2xl shadow-xl flex items-center justify-center text-red-500 border border-gray-100">
+            <i data-lucide="x-circle" class="w-6 h-6"></i>
+        </div>
+    </div>
+
+    <!-- Message -->
+    <h1 class="text-4xl font-black text-gray-950 tracking-tight uppercase mb-6 leading-tight">This Report Has Been Removed</h1>
+    <p class="text-lg font-bold text-gray-500 max-w-md mx-auto mb-12 leading-relaxed">
+        The item <span class="text-gray-900">"{{ item_name|default:'Requested Item' }}"</span> is no longer available in our active registry. It may have been resolved, returned, or manually removed.
+    </p>
+
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="{% url 'items:item_list' %}" class="w-full sm:w-auto px-10 py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-black text-[13px] uppercase tracking-wider transition-all shadow-2xl shadow-primary/20 active:scale-95 flex items-center justify-center gap-3 no-underline">
+            <i data-lucide="search" class="w-5 h-5"></i>
+            Browse Items
+        </a>
+        <a href="{% url 'items:item_list' %}" class="w-full sm:w-auto px-10 py-4 bg-white border-2 border-gray-100 text-gray-400 hover:text-text-main hover:border-gray-200 rounded-2xl font-black text-[13px] uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-3 no-underline">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            Dashboard
+        </a>
+    </div>
+
+    <!-- Help Note -->
+    <div class="mt-20 pt-10 border-t border-gray-50">
+        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">
+            If you believe this is an error, please contact the <span class="text-gray-400 underline decoration-dotted underline-offset-4">Campus Security Office</span>
+        </p>
+    </div>
+</div>
+{% endblock %}

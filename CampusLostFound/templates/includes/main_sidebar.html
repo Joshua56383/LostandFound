@@ -1,0 +1,194 @@
+{% load static %}
+
+<!-- Premium SaaS-Grade Ethereal Sidebar -->
+<aside class="app-sidebar" :class="{ 'open': sidebarOpen, 'collapsed': sidebarCollapsed }" x-data="{ dashboardOpen: true }">
+    
+    <!-- Branding Section -->
+    <div class="sidebar-header">
+        <div class="flex items-center gap-4 transition-all duration-300" :class="sidebarCollapsed ? 'justify-center' : ''">
+            <div class="brand-icon">
+                <i data-lucide="box" class="w-6 h-6"></i>
+            </div>
+            <div class="flex flex-col brand-text" x-show="!sidebarCollapsed" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-x-2">
+                <span class="brand-name">DMMMSU</span>
+                <span class="brand-tagline">Recovery Hub</span>
+            </div>
+        </div>
+
+        <!-- Mobile Toggle (Handled by Layout Context) -->
+        <button class="md:hidden absolute top-8 right-8 w-10 h-10 flex items-center justify-center text-text-muted" @click="sidebarOpen = false">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Collapse Indicator (Desktop Only) -->
+        <button @click="sidebarCollapsed = !sidebarCollapsed" class="hidden md:flex absolute -right-3 top-9 w-6 h-6 bg-white border border-border shadow-sm rounded-full items-center justify-center text-text-light hover:text-primary transition-all z-10">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5 transition-transform duration-500" :class="sidebarCollapsed ? 'rotate-180' : ''"></i>
+        </button>
+    </div>
+
+    <!-- Section: Main Menu -->
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <label class="nav-label" :class="sidebarCollapsed ? 'text-center' : ''">Main Menu</label>
+            
+            <a href="{% url 'items:item_list' %}" class="nav-link {% if request.resolver_match.url_name == 'item_list' and not request.GET.pending %}active{% endif %}">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Browse All</span>
+            </a>
+
+            <a href="{% url 'items:money_tracker' %}" class="nav-link {% if request.resolver_match.url_name == 'money_tracker' %}active{% endif %}">
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Item History</span>
+            </a>
+        </div>
+
+        <!-- Section: Workspace -->
+        <div class="nav-section">
+            <label class="nav-label" :class="sidebarCollapsed ? 'text-center' : ''">Workspace</label>
+
+            <a href="{% url 'items:my_activity' %}" class="nav-link {% if request.resolver_match.url_name == 'my_activity' %}active{% endif %}">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">My Activity</span>
+                {% if my_activity_indicator_count > 0 %}
+                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-[10px] font-bold text-white shadow-sm" x-show="!sidebarCollapsed">
+                    {{ my_activity_indicator_count }}
+                </span>
+                {% endif %}
+            </a>
+
+            <a href="{% url 'items:inbox' %}" class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Messages</span>
+                
+                {% if unread_chats_count > 0 %}
+                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-[10px] font-bold text-white animate-pulse" x-show="!sidebarCollapsed">
+                    {{ unread_chats_count }}
+                </span>
+                {% endif %}
+            </a>
+        </div>
+
+        <!-- Section: Admin Only -->
+        {% if is_admin %}
+        <div class="nav-section border-t border-border/20 pt-4 mt-4">
+            <label class="nav-label" :class="sidebarCollapsed ? 'text-center' : ''">Admin Tools</label>
+            
+            <a href="{% url 'items:item_list' %}?pending=1" class="nav-link {% if request.GET.pending == '1' %}active{% endif %}">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Review Reports</span>
+                
+                {% if global_pending_count > 0 %}
+                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-success text-[10px] font-bold text-white shadow-sm" x-show="!sidebarCollapsed">
+                    {{ global_pending_count }}
+                </span>
+                {% endif %}
+            </a>
+
+            <a href="{% url 'items:admin_claims' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_claims' %}active{% endif %}">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Claims Queue</span>
+                {% if admin_pending_claims_count > 0 %}
+                <span class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-warning text-[10px] font-bold text-white shadow-sm" x-show="!sidebarCollapsed">
+                    {{ admin_pending_claims_count }}
+                </span>
+                {% endif %}
+            </a>
+            
+            <a href="{% url 'items:admin_analytics' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_analytics' %}active{% endif %}">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Stats & Data</span>
+            </a>
+
+            <a href="{% url 'items:user_directory' %}" class="nav-link {% if request.resolver_match.url_name == 'user_directory' %}active{% endif %}">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">All Users</span>
+            </a>
+
+            <a href="{% url 'items:match_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'match_dashboard' %}active{% endif %}">
+                <i data-lucide="zap" class="w-5 h-5 text-primary"></i>
+                <span x-show="!sidebarCollapsed">AI Match Triage</span>
+            </a>
+
+            <a href="{% url 'items:trash' %}" class="nav-link {% if request.resolver_match.url_name == 'trash' %}active{% endif %}">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Deleted Items</span>
+            </a>
+
+            <a href="{% url 'items:system_logs' %}" class="nav-link {% if request.resolver_match.url_name == 'system_logs' %}active{% endif %}">
+                <i data-lucide="database" class="w-5 h-5"></i>
+                <span x-show="!sidebarCollapsed">Audit Logs</span>
+            </a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <!-- Bottom Actions & Identity -->
+    <div class="sidebar-footer">
+        <!-- Identity Block -->
+        <div class="profile-card" x-data="{ profileDrop: false }">
+            {% if user.is_authenticated %}
+            <div class="relative w-full">
+                <button @click="profileDrop = !profileDrop" @click.away="profileDrop = false"
+                        class="w-full flex items-center gap-3 transition-all group" :class="sidebarCollapsed ? 'justify-center' : ''">
+                    <div class="avatar bg-indigo-50 text-indigo-600">
+                        {% if user.userprofile and user.userprofile.avatar %}
+                            <img src="{{ user.userprofile.avatar.url }}" alt="@{{ user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <span class="flex items-center justify-center font-black">{{ user.username|slice:":1"|upper }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="profile-info text-left" x-show="!sidebarCollapsed">
+                        <p class="username">{% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</p>
+                        <p class="role">{% if is_admin %}Administrator{% else %}Student Account{% endif %}</p>
+                    </div>
+
+                    <i data-lucide="chevron-up" class="w-4 h-4 text-text-light ml-auto transition-transform" :class="profileDrop ? 'rotate-180' : ''" x-show="!sidebarCollapsed"></i>
+                </button>
+
+                <!-- Dropdown -->
+                <div x-show="profileDrop" x-cloak
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                     class="absolute bottom-full left-0 w-full mb-3 bg-white border border-border/40 rounded-xl shadow-lg z-50 overflow-hidden">
+                    <div class="p-3">
+                        <button @click.prevent="openModal('Account Settings', '{% url 'items:profile' %}', 'max-w-4xl')" 
+                                class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-xs font-bold text-text-main transition-colors group">
+                            <i data-lucide="settings" class="w-4 h-4 text-text-light group-hover:text-primary"></i>
+                            <span>Account Settings</span>
+                        </button>
+                        <div class="px-4 py-3 bg-primary/5 border border-primary/10 rounded-2xl mb-4 group hover:bg-primary/10 transition-all cursor-pointer" onclick="requestNotificationPermission()">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
+                                    <i data-lucide="bell-ring" class="w-4 h-4"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[9px] font-black text-primary uppercase tracking-widest">Mobile Alerts</p>
+                                    <p class="text-[8px] font-bold text-slate-500 truncate">Tap to Enable Push</p>
+                                </div>
+                            </div>
+                        </div>
+                        <form action="{% url 'logout' %}" method="post" class="m-0 border-t border-gray-50 mt-1 pt-1 text-left">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-danger-light text-xs font-bold text-danger transition-colors group">
+                                <i data-lucide="log-out" class="w-4 h-4 opacity-70 group-hover:opacity-100"></i>
+                                <span>Sign Out</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'login' %}" class="w-full flex items-center gap-3 transition-all group" :class="sidebarCollapsed ? 'justify-center' : ''">
+                <div class="avatar bg-gray-100 text-gray-400">
+                    <i data-lucide="user" class="w-5 h-5"></i>
+                </div>
+                <div class="profile-info" x-show="!sidebarCollapsed">
+                    <p class="username">Guest Session</p>
+                    <p class="role">Sign In Now</p>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</aside>

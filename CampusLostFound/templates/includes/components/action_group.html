@@ -1,0 +1,10 @@
+{% comment %}
+    Action Group Wrapper
+    Wraps multiple buttons with consistent spacing and alignment.
+    Usage:
+    {% include 'includes/components/action_group.html' with buttons_html='...' %}
+{% endcomment %}
+
+<div class="flex items-center gap-3 flex-wrap {{ class }}">
+    {{ slot }}
+</div>

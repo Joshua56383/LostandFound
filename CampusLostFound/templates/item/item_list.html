@@ -1,383 +1,414 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Browse Items - Campus Lost & Found{% endblock %}
+{% block title %}{% if request.GET.pending == '1' %}Admin Queue{% else %}Dashboard - DMMMSU Lost & Found{% endif %}{% endblock %}
 
-{% block extra_head %}
-<!-- Custom Styles -->
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">{% if request.GET.pending == '1' %}Queue{% else %}Feed{% endif %}</span>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ 
-        detailsOpen: false, 
-        selectedItem: null,
-        itemsData: {
+<div class="max-w-7xl mx-auto px-4 lg:px-0 pb-12">
+    <!-- Premium Header: Matches Reference 'ROG Phone' Background -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-[9px] font-black uppercase tracking-widest text-text-light opacity-60">Dashboard</span>
+                <i data-lucide="chevron-right" class="w-2.5 h-2.5 text-border"></i>
+                <span class="text-[9px] font-black uppercase tracking-widest text-primary">Browse</span>
+            </div>
+            <h1 class="text-4xl lg:text-5xl font-black text-text-main tracking-tighter leading-none mb-1">
+                {% if request.GET.pending == '1' %}Needs Approval{% else %}Items Registry{% endif %}
+            </h1>
+            <p class="text-sm font-bold text-text-light">
+                {% if request.GET.pending == '1' %}Reviewing new reports before they go live.{% else %}Browse all items found or lost on campus.{% endif %}
+            </p>
+        </div>
+        
+        <div class="flex flex-wrap gap-4">
+            {% if request.GET.pending == '1' %}
+            <div class="flex items-center gap-3">
+                <button type="button" class="btn bg-primary text-white px-8 py-4 rounded-[1.25rem] shadow-premium flex items-center gap-2 group transition-all" onclick="submitBulkAction('{% url 'items:bulk_approve' %}')">
+                    <i data-lucide="check-circle" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+                    <span class="font-black text-[10px] uppercase tracking-widest">Approve Batch</span>
+                </button>
+            </div>
+            {% else %}
+            <a href="{% url 'items:money_tracker' %}" class="btn bg-slate-900 hover:bg-black text-white px-8 py-5 rounded-[1.25rem] shadow-premium flex items-center gap-2 transition-all">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span class="font-black text-[10px] uppercase tracking-widest">Full History</span>
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Search and Filters -->
+    <section class="bg-white border border-border/50 p-6 sm:p-10 rounded-[3rem] shadow-massive mb-12 relative overflow-hidden group">
+        <!-- Visual Accent -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        
+        <form method="get" class="flex flex-col gap-8 w-full">
+            <input type="hidden" name="pending" value="{{ request.GET.pending|default:'' }}">
+            
+            <!-- Global Search Row -->
+            <div class="w-full relative">
+                <div class="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                    <i data-lucide="search" class="w-5 h-5 text-primary"></i>
+                    <div class="w-px h-6 bg-slate-200"></div>
+                </div>
+                <input type="text" name="q" value="{{ q }}" 
+                       placeholder="What are you looking for? (e.g. 'Blue Wallet', 'CAS Building')" 
+                       class="w-full bg-slate-50/50 border-2 border-slate-100 text-base font-bold text-text-main rounded-2xl pl-20 pr-6 py-5 outline-none focus:bg-white focus:border-primary/30 focus:ring-8 focus:ring-primary/5 transition-all shadow-inner placeholder-gray-300">
+            </div>
+
+            <!-- Unified Filter Controls (Miller's Law - Chunking) -->
+            <div class="flex flex-wrap lg:flex-nowrap items-end gap-4 w-full">
+                <!-- Category Filter -->
+                <div class="flex-1 min-w-[200px] space-y-2">
+                    <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-4">Category</label>
+                    <div class="relative">
+                        <select name="category" onchange="this.form.submit()" 
+                                class="w-full bg-slate-50/80 border border-slate-200 text-text-main text-[11px] font-black uppercase tracking-widest rounded-xl px-6 py-4 outline-none appearance-none pr-12 cursor-pointer hover:bg-white hover:border-primary/20 transition-all">
+                            <option value="all">Any Category</option>
+                            {% for cat in categories_options %}
+                            {% if cat.0 != 'all' %}<option value="{{ cat.0 }}" {% if category == cat.0 %}selected{% endif %}>{{ cat.1 }}</option>{% endif %}
+                            {% endfor %}
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="flex-1 min-w-[200px] space-y-2">
+                    <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-4">Type</label>
+                    <div class="relative">
+                        <select name="tab" onchange="this.form.submit()" 
+                                class="w-full bg-slate-50/80 border border-slate-200 text-text-main text-[11px] font-black uppercase tracking-widest rounded-xl px-6 py-4 outline-none appearance-none pr-12 cursor-pointer hover:bg-white hover:border-primary/20 transition-all">
+                            <option value="all">All Items</option>
+                            <option value="lost" {% if tab == 'lost' %}selected{% endif %}>Lost Items</option>
+                            <option value="found" {% if tab == 'found' %}selected{% endif %}>Found Items</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Isolation Effect: Primary Search Trigger -->
+                <button type="submit" class="h-14 px-12 bg-slate-900 hover:bg-black text-white rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 group">
+                    <i data-lucide="filter" class="w-4 h-4 text-primary group-hover:rotate-12 transition-transform"></i>
+                    <span class="text-[10px] font-black uppercase tracking-widest">Apply Filters</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Main Entry Display Container -->
+    <form id="bulk-form" method="post">
+        {% csrf_token %}
+        
+        {% if request.GET.pending == '1' %}
+        <!-- Admin Moderation Toolbar -->
+        <div class="sticky top-24 z-40 bg-white/80 backdrop-blur-xl border border-border/50 p-4 rounded-[2rem] shadow-xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4"
+             x-data="triageConsole({{ total_count }}, '{% url 'items:smart_approve_items' %}')"
+             @keydown.window="(e) => handleKeydown(e)">
+            
+            <div class="flex items-center gap-4">
+                <div class="px-5 py-2 bg-slate-900 text-white rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                    <span>Waiting:</span>
+                    <span x-text="count" class="text-primary-light bg-white/10 px-2 py-0.5 rounded-md"></span>
+                </div>
+                <!-- Selection -->
+                <button type="button" @click.prevent="toggleSelectAll" class="px-4 py-2 border border-border/50 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold text-text-main flex items-center gap-2 transition-colors">
+                    <i data-lucide="check-square" class="w-4 h-4 text-text-light"></i>
+                    Select All
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-end gap-2">
+                <button type="button" @click.prevent="submitBulkAction('{% url 'items:bulk_approve' %}')" title="Shortcut: A" class="h-10 px-4 flex items-center justify-center rounded-xl bg-success/10 text-success font-black border border-success/20 hover:bg-success hover:text-white transition-all text-xs tracking-widest uppercase">
+                    <i data-lucide="check" class="w-4 h-4 mr-1.5 border-r border-current pr-1.5 opacity-70"></i> Approve
+                </button>
+                <button type="button" @click.prevent="submitBulkAction('{% url 'items:bulk_reject' %}')" title="Shortcut: R" class="h-10 px-4 flex items-center justify-center rounded-xl bg-danger/10 text-danger font-black border border-danger/20 hover:bg-danger hover:text-white transition-all text-xs tracking-widest uppercase">
+                    <i data-lucide="x" class="w-4 h-4 mr-1.5 border-r border-current pr-1.5 opacity-70"></i> Reject
+                </button>
+                <button type="button" @click.prevent="executeSmartApprove()" class="h-10 px-5 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-700 text-white shadow-lg hover:bg-black transition-all text-[10px] tracking-[0.2em] uppercase font-black ml-2 group gap-2">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform"></i>
+                    Quick Approve
+                </button>
+            </div>
+        </div>
+
+        <!-- System Triage List View -->
+        <div class="flex flex-col gap-6" id="triage-list-container">
             {% for item in items %}
-            '{{ item.id }}': {
-                title: '{{ item.name|escapejs }}',
-                description: '{{ item.description|escapejs }}',
-                category: '{{ item.category|default:"Other"|escapejs }}',
-                location: '{{ item.location|escapejs }}',
-                date: '{{ item.date_reported|date:"M d, Y" }}',
-                imageUrl: '{% if item.image %}{{ item.image.url|escapejs }}{% else %}https://images.unsplash.com/photo-1533696848654-6bdf438edea4?auto=format&fit=crop&q=80&w=1080{% endif %}',
-                status: '{{ item.status|escapejs }}',
-                contactName: '{{ item.contact_name|escapejs }}',
-                contactEmail: '{{ item.contact_email|escapejs }}',
-                id: '{{ item.id }}',
-                isOwner: {% if item.owner == request.user %}true{% else %}false{% endif %}
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        },
-    openDetails(id) { this.selectedItem=this.itemsData[id]; this.detailsOpen=true; } }">
+            <div x-data="triageRow('{{ item.id }}', '{% url 'items:approve_item' item.id %}', '{% url 'items:reject_item' item.id %}', '{% url 'items:revert_item' item.id %}')"
+                 x-show="!deleted"
+                 x-transition.opacity.duration.300ms
+                 x-init="init()"
+                 :class="{ 
+                    'bg-white border-border/40': state === 'pending' && !showUndo,
+                    'bg-blue-50 border-blue-200 opacity-90 scale-[0.99]': state === 'approved' && showUndo,
+                    'bg-red-50 border-red-200 opacity-90 scale-[0.99]': state === 'rejected' && showUndo 
+                 }"
+                 class="border p-5 rounded-[2rem] hover:shadow-massive transition-all duration-300 group flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
 
-    <!-- Welcome & Stats Row -->
-    <div class="flex flex-col lg:flex-row gap-6 mb-8 items-start lg:items-center justify-between">
-        <div class="max-w-2xl">
-            <h2 class="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-                Hello{% if user.is_authenticated %}, {{ user.username }}{% endif %} ðŸ‘‹
-            </h2>
-            <p class="text-gray-500 text-lg">Help reunite lost items with their owners across campus.</p>
-        </div>
-
-        <div
-            class="flex items-center gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-full lg:w-auto overflow-x-auto">
-            <div class="flex flex-col px-4 py-2 min-w-28">
-                <span class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Total Items</span>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="package" class="w-4 h-4 text-indigo-500"></i>
-                    <span class="text-2xl font-bold text-gray-900">{{ total_count }}</span>
+                <div class="absolute top-0 left-0 w-1.5 h-full {{ item.display_status.dot }} opacity-60"></div>
+                
+                <div class="shrink-0 flex items-center px-4">
+                    <input type="checkbox" name="item_ids" value="{{ item.id }}" class="w-6 h-6 rounded-lg border-2 border-slate-200 text-primary focus:ring-primary/20 cursor-pointer shadow-sm">
                 </div>
-            </div>
-            <div class="w-px h-10 bg-gray-100"></div>
-            <div class="flex flex-col px-4 py-2 min-w-28">
-                <span class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Lost</span>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="circle-alert" class="w-4 h-4 text-red-500"></i>
-                    <span class="text-2xl font-bold text-gray-900">{{ lost_count }}</span>
-                </div>
-            </div>
-            <div class="w-px h-10 bg-gray-100"></div>
-            <div class="flex flex-col px-4 py-2 min-w-28">
-                <span class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Found</span>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="circle-check" class="w-4 h-4 text-emerald-500"></i>
-                    <span class="text-2xl font-bold text-gray-900">{{ found_count }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="flex md:hidden gap-3 mb-8">
-        <button @click="reportType = 'lost'; reportOpen = true"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 rounded-xl font-semibold text-sm border border-red-100">
-            <i data-lucide="plus" class="w-4 h-4"></i> Report Lost
-        </button>
-        <button @click="reportType = 'found'; reportOpen = true"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl font-semibold text-sm border border-emerald-100">
-            <i data-lucide="plus" class="w-4 h-4"></i> Report Found
-        </button>
-    </div>
-
-    <!-- Search, Filter & Tabs Toolbar -->
-    <form method="get"
-        class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-8 flex flex-col xl:flex-row gap-4 justify-between items-center"
-        id="filter-form">
-        <!-- Preserve tab state -->
-        <input type="hidden" name="tab" value="{{ tab }}" id="tab-input">
-
-        <!-- Search -->
-        <div class="relative w-full xl:max-w-md">
-            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-            <input type="text" name="q" placeholder="Search items by name or description..." value="{{ q }}"
-                onchange="document.getElementById('filter-form').submit();"
-                class="w-full !pl-10 !pr-4 !py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all placeholder:text-gray-400 font-medium" />
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
-            <!-- Filters -->
-            <div class="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-                <div class="relative min-w-[140px]">
-                    <select name="category" onchange="document.getElementById('filter-form').submit();"
-                        class="w-full appearance-none bg-none bg-gray-50 border border-gray-200 rounded-xl !pl-4 !pr-10 !py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all">
-                        {% if category == 'all' %}
-                        <option value="all" selected>All Categories</option>
-                        {% else %}
-                        <option value="all">All Categories</option>
-                        {% endif %}
-                        {% for cat in categories %}
-                        {% if category == cat %}
-                        <option value="{{ cat }}" selected>{{ cat }}</option>
-                        {% else %}
-                        <option value="{{ cat }}">{{ cat }}</option>
-                        {% endif %}
-                        {% endfor %}
-                    </select>
-                    <i data-lucide="sliders-horizontal"
-                        class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
-                </div>
-                <div class="relative min-w-[140px]">
-                    <select name="location" onchange="document.getElementById('filter-form').submit();"
-                        class="w-full appearance-none bg-none bg-gray-50 border border-gray-200 rounded-xl !pl-4 !pr-10 !py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 transition-all">
-                        {% if location == 'all' %}
-                        <option value="all" selected>All Locations</option>
-                        {% else %}
-                        <option value="all">All Locations</option>
-                        {% endif %}
-                        {% for loc in locations %}
-                        {% if location == loc %}
-                        <option value="{{ loc }}" selected>{{ loc }}</option>
-                        {% else %}
-                        <option value="{{ loc }}">{{ loc }}</option>
-                        {% endif %}
-                        {% endfor %}
-                    </select>
-                    <i data-lucide="sliders-horizontal"
-                        class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
-                </div>
-            </div>
-
-            <!-- Segmented Control for Tabs -->
-            <div class="flex items-center p-1 bg-gray-100 rounded-xl w-full sm:w-auto whitespace-nowrap">
-                <button type="button"
-                    onclick="document.getElementById('tab-input').value='all'; document.getElementById('filter-form').submit();"
-                    class="flex-1 sm:flex-none px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all {% if tab == 'all' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-200/50{% endif %}">
-                    All
-                </button>
-                <button type="button"
-                    onclick="document.getElementById('tab-input').value='lost'; document.getElementById('filter-form').submit();"
-                    class="flex-1 sm:flex-none px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all {% if tab == 'lost' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-200/50{% endif %}">
-                    Lost
-                </button>
-                <button type="button"
-                    onclick="document.getElementById('tab-input').value='found'; document.getElementById('filter-form').submit();"
-                    class="flex-1 sm:flex-none px-4 py-1.5 text-sm font-semibold rounded-lg capitalize transition-all {% if tab == 'found' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-200/50{% endif %}">
-                    Found
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Items Grid (Masonry using CSS columns) -->
-    {% if not items %}
-    <div
-        class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
-        <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100">
-            <i data-lucide="package" class="w-8 h-8 text-gray-300"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-1">No items found</h3>
-        <p class="text-gray-500 text-sm max-w-sm text-center">
-            We couldn't find any items matching your current filters. Try adjusting your search or report a new item.
-        </p>
-        <a href="{% url 'items:item_list' %}"
-            class="mt-6 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors">
-            Clear all filters
-        </a>
-    </div>
-    {% else %}
-    <div class="columns-1 sm:columns-2 lg:columns-3 gap-6">
-        {% for item in items %}
-        {% include 'item/item_card.html' with item=item %}
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if items.has_other_pages %}
-    <div
-        class="mt-8 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-2xl shadow-sm">
-        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-                <p class="text-sm text-gray-700">
-                    Showing <span class="font-medium">{{ items.start_index }}</span> to <span class="font-medium">{{
-                        items.end_index }}</span> of <span class="font-medium">{{ items.paginator.count }}</span>
-                    results
-                </p>
-            </div>
-            <div>
-                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                    {% if items.has_previous %}
-                    <a href="?page={{ items.previous_page_number }}&q={{ q }}&category={{ category }}&location={{ location }}&tab={{ tab }}"
-                        class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                        <span class="sr-only">Previous</span>
-                        <i data-lucide="chevron-left" class="h-5 w-5"></i>
-                    </a>
+                
+                <div class="w-32 h-32 rounded-3xl bg-slate-900 overflow-hidden shrink-0 shadow-premium relative">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    {% else %}
+                        <div class="w-full h-full flex flex-col items-center justify-center text-white/20">
+                            <i data-lucide="image" class="w-8 h-8"></i>
+                        </div>
                     {% endif %}
+                </div>
 
-                    <span
-                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0">
-                        Page {{ items.number }} of {{ items.paginator.num_pages }}
-                    </span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        {% include 'includes/components/status_badge.html' with item=item %}
+                        <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-border/50 rounded-full text-[9px] font-black text-text-light uppercase tracking-widest">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span>{{ item.date_reported|timesince }} ago</span>
+                        </div>
+                    </div>
+                    <h4 class="text-2xl font-black text-text-main truncate mb-2 group-hover:text-primary transition-colors">{{ item.name }}</h4>
+                    <p class="text-sm font-bold text-text-muted flex items-center gap-2 capitalize">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-text-light"></i>
+                        {{ item.location }}
+                    </p>
+                </div>
 
-                    {% if items.has_next %}
-                    <a href="?page={{ items.next_page_number }}&q={{ q }}&category={{ category }}&location={{ location }}&tab={{ tab }}"
-                        class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                        <span class="sr-only">Next</span>
-                        <i data-lucide="chevron-right" class="h-5 w-5"></i>
-                    </a>
-                    {% endif %}
-                </nav>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    {% endif %}
+                <!-- Triage Commands -->
+                <div class="flex items-center gap-4 shrink-0 px-6 py-4 md:py-0 border-t md:border-t-0 border-border/30 w-full md:w-auto justify-end">
+                    
+                    <!-- DEFAULT UI (Before action) -->
+                    <template x-if="!showUndo">
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click.prevent="openModal('Triage Detail', '{% url 'items:item_detail' item.id %}', 'max-w-5xl')" 
+                                    class="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-text-light hover:text-primary hover:border-primary/30 transition-all shadow-sm">
+                                <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                            </button>
+                            
+                            <button type="button" 
+                                    class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-danger/20 text-danger hover:bg-danger hover:text-white transition-all shadow-sm"
+                                    title="Reject & Archive"
+                                    @click.prevent="commitAction('rejected')">
+                                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            </button>
 
-
-    <!-- Item Details Dialog (Alpine.js Modal) -->
-    <div x-show="detailsOpen" style="display: none;" class="relative z-50">
-        <div x-show="detailsOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-            class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div x-show="detailsOpen" @click.away="detailsOpen = false" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="relative transform overflow-hidden rounded-2xl md:rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl border-0 p-0">
-
-                    <button @click="detailsOpen = false"
-                        class="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors backdrop-blur-sm">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-
-                    <template x-if="selectedItem">
-                        <div class="flex flex-col md:flex-row h-full max-h-[90vh]">
-                            <!-- Left Side: Image -->
-                            <div class="w-full md:w-1/2 relative bg-gray-100 min-h-[250px] md:min-h-[500px]">
-                                <img :src="selectedItem.imageUrl" :alt="selectedItem.title"
-                                    class="absolute inset-0 w-full h-full object-cover">
-                                <div
-                                    class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent">
-                                </div>
-                                <div class="absolute bottom-6 left-6 right-6 flex items-center justify-between">
-                                    <span
-                                        class="px-3 py-1.5 text-xs font-bold rounded-full shadow-lg flex items-center gap-2"
-                                        :class="selectedItem.status === 'lost' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'">
-                                        <template x-if="selectedItem.status === 'lost'">
-                                            <i data-lucide="circle-alert" class="w-4 h-4"></i>
-                                        </template>
-                                        <template x-if="selectedItem.status === 'found'">
-                                            <i data-lucide="circle-check" class="w-4 h-4"></i>
-                                        </template>
-                                        <span
-                                            x-text="selectedItem.status === 'lost' ? 'Lost Item' : 'Found Item'"></span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Right Side: Details -->
-                            <div class="w-full md:w-1/2 flex flex-col h-full bg-white relative">
-                                <div class="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
-
-                                    <!-- Header Info -->
-                                    <div>
-                                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-3"
-                                            x-text="selectedItem.title"></h2>
-                                        <div class="flex flex-wrap items-center gap-3 text-sm">
-                                            <div
-                                                class="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md font-medium">
-                                                <i data-lucide="tag" class="w-4 h-4"></i>
-                                                <span x-text="selectedItem.category"></span>
-                                            </div>
-                                            <div class="flex items-center gap-1.5 text-gray-500">
-                                                <i data-lucide="calendar" class="w-4 h-4"></i>
-                                                <span x-text="selectedItem.date"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Description -->
-                                    <div>
-                                        <h3
-                                            class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                            <i data-lucide="info" class="w-4 h-4 text-gray-400"></i> Details
-                                        </h3>
-                                        <p class="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100"
-                                            x-text="selectedItem.description"></p>
-                                    </div>
-
-                                    <!-- Location & Contact Grid -->
-                                    <div class="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                                                Location</h3>
-                                            <div class="flex items-start gap-3">
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                                                    <i data-lucide="map-pin" class="w-5 h-5 text-indigo-600"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="font-medium text-gray-900" x-text="selectedItem.location">
-                                                    </p>
-                                                    <p class="text-sm text-gray-500">Where the item was <span
-                                                            x-text="selectedItem.status === 'lost' ? 'last seen' : 'found'"></span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h3
-                                                class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                                                Contact Person</h3>
-                                            <div class="flex items-start gap-3">
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                                                    <i data-lucide="user" class="w-5 h-5 text-gray-600"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="font-medium text-gray-900"
-                                                        x-text="selectedItem.contactName ? selectedItem.contactName : 'Unknown'">
-                                                    </p>
-                                                    <p class="text-sm text-gray-500"
-                                                        x-text="selectedItem.contactEmail ? selectedItem.contactEmail : 'No email provided'">
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Sticky Action Footer -->
-                                <div class="p-6 border-t border-gray-100 bg-white sticky bottom-0 z-10 space-y-3">
-                                    <div class="flex gap-3">
-                                        <template x-if="selectedItem.status !== 'claimed' && !selectedItem.isOwner">
-                                            <a :href="'/claim-submit/' + selectedItem.id + '/'"
-                                                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
-                                                <i data-lucide="hand-helping" class="w-5 h-5"></i>
-                                                Claim Item
-                                            </a>
-                                        </template>
-                                        <a :href="'mailto:' + selectedItem.contactEmail + '?subject=Regarding ' + selectedItem.status + ' item: ' + selectedItem.title"
-                                            class="flex-1 bg-gray-900 hover:bg-gray-800 text-white px-6 py-3.5 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
-                                            <i data-lucide="mail" class="w-5 h-5"></i>
-                                            Contact Finder
-                                        </a>
-                                        <button
-                                            @click="navigator.clipboard.writeText(window.location.host + '/items/' + selectedItem.id + '/'); alert('Link copied to clipboard!');"
-                                            class="px-4 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-900 rounded-xl border border-gray-200 transition-colors flex items-center justify-center"
-                                            title="Share">
-                                            <i data-lucide="share-2" class="w-5 h-5"></i>
-                                        </button>
-                                    </div>
-                                    <template x-if="selectedItem.status !== 'claimed' && !selectedItem.isOwner">
-                                        <p class="text-[11px] text-center text-gray-400 font-medium italic">
-                                            Clicking Claim will allow you to provide proof of ownership.
-                                        </p>
-                                    </template>
-                                </div>
-                            </div>
+                            <button type="button" @click.prevent="commitAction('approved')" class="w-14 h-14 flex items-center justify-center rounded-[1.25rem] bg-success text-white shadow-massive hover:scale-105 transition-transform" title="Verify & Release">
+                                <i data-lucide="check" class="w-5 h-5"></i>
+                            </button>
                         </div>
                     </template>
+
+                    <!-- UNDO STATE (After action) -->
+                    <template x-if="showUndo">
+                        <div class="flex items-center gap-3 pr-2">
+                            <span class="text-xs font-black uppercase tracking-widest flex items-center gap-2" :class="state === 'approved' ? 'text-primary' : 'text-danger'">
+                                <i :data-lucide="state === 'approved' ? 'check-circle' : 'stop-circle'" class="w-4 h-4"></i>
+                                <span x-text="state === 'approved' ? 'Approving' : 'Rejecting'"></span>
+                            </span>
+                            <button type="button" @click.prevent="undoAction()" class="h-10 px-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center gap-2">
+                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Undo <span x-text="Math.ceil(countdown)"></span>s
+                            </button>
+                        </div>
+                    </template>
+
                 </div>
             </div>
+            {% empty %}
+            <div class="py-40 text-center bg-slate-50 border-2 border-dashed border-border/50 rounded-[3rem]">
+                <div class="flex flex-col items-center gap-6 opacity-20">
+                    <div class="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center text-success">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-text-main uppercase tracking-widest mb-1">Queue Empty</h3>
+                        <p class="text-xs font-bold text-text-light">All reports have been reviewed.</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-    </div>
+
+        {% else %}
+        <!-- Premium Registry Display -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {% for item in items %}
+                {% include 'item/item_card.html' with item=item %}
+            {% empty %}
+            <div class="col-span-full py-40 text-center bg-slate-50 border-2 border-dashed border-border/50 rounded-[3rem]">
+                <div class="flex flex-col items-center gap-6 opacity-20">
+                    <div class="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-400">
+                        <i data-lucide="search-x" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-text-main uppercase tracking-widest mb-1">Items Missing</h3>
+                        <p class="text-xs font-bold text-text-light">No items found matching your search.</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Pagination: Premium Dock Style -->
+    {% if page_obj.has_other_pages %}
+    <nav class="flex justify-center mt-20">
+        <div class="flex items-center gap-6 bg-white border border-border/50 p-3 pl-8 pr-3 rounded-[2rem] shadow-massive">
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-text-light/50">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            
+            <div class="flex items-center gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if request.GET.pending %}&pending=1{% endif %}" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-border text-text-muted hover:text-primary transition-all">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                {% endif %}
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if request.GET.pending %}&pending=1{% endif %}" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-900 border border-slate-900 text-white shadow-lg hover:bg-black transition-all">
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endif %}
 </div>
+
+<script>
+function triageConsole(initialCount, smartApproveUrl) {
+    return {
+        count: initialCount,
+        smartApproveUrl: smartApproveUrl,
+        
+        toggleSelectAll() {
+            const checkboxes = document.querySelectorAll('input[name="item_ids"]');
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            checkboxes.forEach(c => c.checked = !allChecked);
+        },
+
+        handleKeydown(e) {
+            // Do not override user typing
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            const key = e.key.toLowerCase();
+            if (key === 'a') {
+                e.preventDefault();
+                submitBulkAction("{% url 'items:bulk_approve' %}");
+            } else if (key === 'r') {
+                e.preventDefault();
+                submitBulkAction("{% url 'items:bulk_reject' %}");
+            }
+        },
+
+        executeSmartApprove() {
+            customConfirm('Smart Approve', 'Automatically verify and approve trusted Safe Items?', () => {
+                fetch(this.smartApproveUrl, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        window.location.reload(); // Quick reset to sync rows
+                    }
+                });
+            });
+        }
+    }
+}
+
+function triageRow(itemId, approveUrl, rejectUrl, revertUrl) {
+    return {
+        state: 'pending',
+        showUndo: false,
+        countdown: 5,
+        undoTimer: null,
+        tickTimer: null,
+        deleted: false,
+        
+        init() {
+            // Re-eval feather/lucide icons if injected
+            if (window.lucide) {
+                setTimeout(() => lucide.createIcons(), 50);
+            }
+        },
+
+        commitAction(actionType) {
+            // Optimistic UI - Update instantly to feedback state
+            const targetUrl = actionType === 'approved' ? approveUrl : rejectUrl;
+            
+            fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    this.state = actionType;
+                    this.showUndo = true;
+                    this.countdown = 5;
+                    this.startUndoCountdown();
+                } else {
+                    alert('Action could not be processed.');
+                }
+            }).catch(e => {
+                console.error(e);
+                alert("Network error.");
+            });
+        },
+
+        startUndoCountdown() {
+            this.tickTimer = setInterval(() => {
+                this.countdown -= 1;
+                if (this.countdown <= 0) {
+                    clearInterval(this.tickTimer);
+                    this.finalizeRow();
+                }
+            }, 1000);
+        },
+
+        undoAction() {
+            clearInterval(this.tickTimer);
+            
+            fetch(revertUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    this.state = 'pending';
+                    this.showUndo = false;
+                }
+            });
+        },
+
+        finalizeRow() {
+            this.showUndo = false;
+            this.deleted = true;
+            setTimeout(() => {
+                const consoleRoot = document.querySelector('[x-data^="triageConsole"]');
+                if (consoleRoot && consoleRoot.__x) {
+                    consoleRoot.__x.$data.count = Math.max(0, consoleRoot.__x.$data.count - 1);
+                }
+            }, 300);
+        }
+    }
+}
+
+function submitBulkAction(url) {
+    const form = document.getElementById('bulk-form');
+    if (!form.querySelector('input[name="item_ids"]:checked')) {
+        alert("Please select at least one item from the triage queue.");
+        return;
+    }
+    customConfirm('System Audit', 'Apply batch verification to selected records?', () => {
+        form.action = url;
+        form.submit();
+    });
+}
+</script>
 {% endblock %}

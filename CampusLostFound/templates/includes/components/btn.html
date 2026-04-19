@@ -1,0 +1,48 @@
+{% comment %}
+    🎓 Unified Action Component
+    Standardized for the institutional design system.
+    Usage: {% include 'includes/components/btn.html' with label="Action" variant="primary" icon="edit" %}
+    Parameters:
+    - label: Text to display
+    - variant: primary, secondary, danger, accent, ghost, ethereal (default: primary)
+    - type: link, button, submit (default: link if url exists, button otherwise)
+    - url: Link destination (if type is link)
+    - icon: Lucide icon name
+    - size: sm, base, lg (default: base)
+    - class: Extra CSS classes
+    - attrs: Extra HTML attributes (e.g. @click="...", data-id="1")
+    - loading_var: Alpine.js variable name for loading state (e.g., "loading")
+    - modal_title: Title for the modal (if using modal)
+    - modal_url: URL to load in the modal
+    - modal_size: Size of the modal (e.g., max-w-2xl)
+{% endcomment %}
+
+{% spaceless %}
+<{% if type == 'link' or url %}a href="{{ url|default:'#' }}"{% else %}button type="{{ type|default:'button' }}"{% endif %}
+  class="btn btn-{{ variant|default:'primary' }} {% if size == 'sm' %}btn-sm{% elif size == 'lg' %}btn-lg{% endif %} {{ class }}"
+  {% if loading_var %}
+    :disabled="{{ loading_var }}"
+    :class="{ 'opacity-50 cursor-not-allowed': {{ loading_var }} }"
+  {% endif %}
+  {% if modal_url %}
+    @click.prevent.stop="openModal('{{ modal_title|default:'' }}', '{{ modal_url }}', '{{ modal_size|default:'max-w-xl' }}')"
+  {% endif %}
+  {{ attrs|safe }}
+>
+    {% if icon %}
+        <i data-lucide="{{ icon }}" 
+           class="{% if size == 'sm' %}w-3.5 h-3.5{% elif size == 'lg' %}w-5 h-5{% else %}w-4 h-4{% endif %} transition-transform group-hover:scale-110"
+           {% if loading_var %}x-show="!{{ loading_var }}"{% endif %}></i>
+    {% endif %}
+
+    {% if loading_var %}
+        <div x-show="{{ loading_var }}" x-cloak class="flex gap-1.5 items-center">
+            <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+            <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
+            <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
+        </div>
+    {% endif %}
+
+    <span {% if loading_var %}x-show="!{{ loading_var }}"{% endif %}>{{ label }}</span>
+</{% if type == 'link' or url %}a{% else %}button{% endif %}>
+{% endspaceless %}

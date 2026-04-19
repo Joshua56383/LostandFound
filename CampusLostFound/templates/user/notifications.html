@@ -1,0 +1,175 @@
+{% extends base_template %}
+{% load static %}
+
+{% block title %}Notifications - Recovery Hub{% endblock %}
+
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Notifications</span>
+{% endblock %}
+
+{% block content %}
+<div class="h-full overflow-hidden" 
+     x-data="{ 
+        activeTab: 'inbox',
+        markingAll: false,
+        markRead(id) {
+            fetch(`{% url 'items:mark_read' 0 %}`.replace('0', id), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(() => {
+                window.dispatchEvent(new CustomEvent('notification-updated'));
+                document.getElementById(`dot-${id}`)?.remove();
+            });
+        },
+        archive(id) {
+            fetch(`{% url 'items:archive_notification' 0 %}`.replace('0', id), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(() => {
+                document.getElementById(`notif-${id}`)?.remove();
+                window.dispatchEvent(new CustomEvent('notification-updated'));
+            });
+        }
+     }">
+    
+    <!-- 1:1 Design Header -->
+    <div class="px-8 pt-8 pb-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-[1.25rem] font-bold text-[#1a1a1a]">Notifications</h1>
+            <button @click.prevent="markingAll = true; $refs.markAllForm.submit()" 
+                    class="text-[0.9rem] font-semibold text-[#8e8e8e] hover:text-[#1a1a1a] transition-colors">
+                Mark all as read
+            </button>
+            <form x-ref="markAllForm" action="{% url 'items:mark_all_read' %}" method="post" class="hidden">{% csrf_token %}</form>
+        </div>
+
+        <!-- 1:1 Design Tabs -->
+        <div class="flex items-center gap-8 border-b border-[#f0f0f0] relative">
+            <button @click="activeTab = 'inbox'" 
+                    class="pb-3 text-[0.9rem] font-bold transition-all relative flex items-center gap-2 group"
+                    :class="activeTab === 'inbox' ? 'text-[#1a1a1a]' : 'text-[#8e8e8e] hover:text-[#1a1a1a]'">
+                <span>Inbox</span>
+                <span class="flex items-center justify-center min-w-[1.25rem] h-[1.25rem] px-1 bg-[#1a1a1a] text-white text-[0.65rem] font-black rounded-full">{{ counts.inbox }}</span>
+                <div x-show="activeTab === 'inbox'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#1a1a1a]"></div>
+            </button>
+
+            <button @click="activeTab = 'general'" 
+                    class="pb-3 text-[0.9rem] font-bold transition-all relative flex items-center gap-2 group"
+                    :class="activeTab === 'general' ? 'text-[#1a1a1a]' : 'text-[#8e8e8e] hover:text-[#1a1a1a]'">
+                <span>General</span>
+                <span class="flex items-center justify-center min-w-[1.25rem] h-[1.25rem] px-1 bg-[#f0f0f0] text-[#1a1a1a] text-[0.65rem] font-black rounded-full">{{ counts.general }}</span>
+                <div x-show="activeTab === 'general'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#1a1a1a]"></div>
+            </button>
+
+            <div class="h-4 w-px bg-[#f0f0f0] mb-3"></div>
+
+            <button @click="activeTab = 'archived'" 
+                    class="pb-3 text-[0.9rem] font-bold transition-all relative"
+                    :class="activeTab === 'archived' ? 'text-[#1a1a1a]' : 'text-[#8e8e8e] hover:text-[#1a1a1a]'">
+                <span>Archived</span>
+                <div x-show="activeTab === 'archived'" class="absolute bottom-0 left-0 w-full h-[2px] bg-[#1a1a1a]"></div>
+            </button>
+
+            <button class="absolute right-0 bottom-3 text-[#8e8e8e] hover:text-[#1a1a1a] transition-colors">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 1:1 Notification Feed -->
+    <div class="divide-y divide-[#f0f0f0]">
+        {% for notification in notifications %}
+        <div id="notif-{{ notification.id }}" 
+             x-show="(activeTab === 'inbox' && !{{ notification.is_read|yesno:'true,false' }}) || (activeTab === 'general') || (activeTab === 'archived' && {{ notification.is_archived|yesno:'true,false' }})"
+             @click="markRead({{ notification.id }})"
+             class="group flex items-start gap-4 px-8 py-5 transition-all cursor-pointer hover:bg-[#fafafa] relative">
+            
+            <!-- Avatar Block with 1:1 Status Dot -->
+            <div class="shrink-0 relative">
+                <div class="w-12 h-12 rounded-full overflow-hidden bg-[#f5f5f5]">
+                    {% if notification.sender and notification.sender.userprofile.avatar %}
+                        <img src="{{ notification.sender.userprofile.avatar.url }}" class="w-full h-full object-cover">
+                    {% elif notification.sender %}
+                        <!-- Letter Fallback -->
+                        <div class="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-600 font-black text-sm uppercase">
+                            {{ notification.sender.username|slice:":1" }}
+                        </div>
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-[#e8e9ff] text-primary">
+                            <i data-lucide="user" class="w-6 h-6"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- status dot overlay -->
+                <div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-white rounded-full flex items-center justify-center">
+                    <div class="w-2.5 h-2.5 rounded-full {% if not notification.is_read %}bg-[#4caf50]{% else %}bg-[#bdbdbd]{% endif %}"></div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 min-w-0 pr-6">
+                <p class="text-[0.9rem] tracking-tight leading-snug mb-1">
+                    <span class="font-bold text-[#1a1a1a]">{% if notification.sender %}{{ notification.sender.username }}{% else %}System Admin{% endif %}</span>
+                    <span class="font-medium text-[#8e8e8e]"> {{ notification.title|lower|default:notification.get_category_display }}</span>
+                    {% if notification.related_item %}
+                        <span class="font-bold text-[#1a1a1a]"> {{ notification.related_item.name }}</span>
+                    {% endif %}
+                </p>
+                
+                <p class="text-[0.75rem] font-bold text-[#b5b5b5]">
+                    {{ notification.created_at|timesince }} ago • 
+                    {% if notification.category == 'admin' %}Admin Office{% elif notification.category == 'activity' %}Activity Log{% else %}Registry System{% endif %}
+                </p>
+
+                <!-- 1:1 Context Messages -->
+                {% if notification.category == 'activity' and 'claim' in notification.message|lower %}
+                <div class="mt-3 flex items-center gap-3">
+                    <button @click.stop="openModal('Claim Review', '{% url 'items:admin_claims' %}', 'max-w-5xl')" 
+                            class="px-4 py-2 bg-[#7c4dff] text-white text-[0.8rem] font-bold rounded-lg shadow-sm active:scale-95 transition-all">
+                        Accept
+                    </button>
+                    <button @click.stop="archive({{ notification.id }})" 
+                            class="px-4 py-2 border border-[#f0f0f0] text-[#1a1a1a] text-[0.8rem] font-bold rounded-lg hover:bg-slate-50 active:scale-95 transition-all">
+                        Decline
+                    </button>
+                </div>
+                {% elif notification.related_item %}
+                <button @click.stop="openModal('', '{% url 'items:item_detail' notification.related_item.id %}', 'max-w-4xl')"
+                        class="mt-3 px-4 py-2 border border-[#f0f0f0] text-[#1a1a1a] text-[0.8rem] font-bold rounded-lg hover:bg-slate-50 transition-all">
+                    View Case
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- 1:1 Purple Unread Dot -->
+            {% if not notification.is_read %}
+            <div id="dot-{{ notification.id }}" class="absolute right-8 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#7c4dff]"></div>
+            {% endif %}
+
+            <!-- Hover Archive Action -->
+            <button @click.stop="archive({{ notification.id }})" 
+                    class="absolute right-2 top-2 p-2 opacity-0 group-hover:opacity-100 text-[#b5b5b5] hover:text-[#1a1a1a] transition-all">
+                <i data-lucide="archive" class="w-4 h-4"></i>
+            </button>
+        </div>
+        {% empty %}
+        <div class="py-24 text-center">
+            <div class="w-16 h-16 bg-[#f5f5f5] rounded-2xl flex items-center justify-center mx-auto mb-4 scale-75 opacity-50">
+                <i data-lucide="bell-off" class="w-8 h-8 text-[#1a1a1a]"></i>
+            </div>
+            <p class="text-[0.9rem] font-bold text-[#b5b5b5]">No notifications yet</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 1:1 design usually has a subtle footer or just ends -->
+    <div class="h-8"></div>
+</div>
+
+<style>
+    .shadow-massive {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    }
+</style>
+{% endblock %}
+
+

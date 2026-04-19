@@ -1,0 +1,194 @@
+{% extends base_template %}
+{% load static %}
+
+{% block title %}Dashboard - DMMMSU Recovery Hub{% endblock %}
+
+{% block breadcrumb_area %}{% endblock %}
+
+{% block content %}
+<div class="pt-8"></div>
+
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-10">
+
+    <!-- LEFT: Personal Intelligence -->
+    <div class="lg:col-span-3 flex flex-col gap-10">
+        <div class="card card-premium">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h3 class="text-xl font-black uppercase tracking-widest text-text-main">Registry Monitor</h3>
+                    <p class="text-[10px] uppercase font-bold text-text-light opacity-50">Real-time status tracking</p>
+                </div>
+                <div class="p-3 bg-primary/10 rounded-2xl text-primary">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+            </header>
+
+            {% if pending_count == 0 and active_reports == 0 %}
+            <div
+                class="p-16 text-center rounded-[2.5rem] bg-bg-main border-2 border-dashed border-border flex flex-col items-center justify-center">
+                <div
+                    class="w-20 h-20 bg-white shadow-sm border border-border text-text-light/20 rounded-3xl flex items-center justify-center mb-6 rotate-3">
+                    <i data-lucide="inbox" class="w-10 h-10"></i>
+                </div>
+                <p class="text-xs font-bold text-text-light/60 mb-8 max-w-xs leading-relaxed">Your active files and
+                    real-time updates will appear here once you register a report.</p>
+                {% url 'items:add_item' as add_item_url %}
+                {% include 'includes/components/btn.html' with label="Register a Document" variant="secondary" size="sm"
+                modal_title="New Item Report" modal_url=add_item_url modal_size="max-w-3xl" %}
+            </div>
+            {% else %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="card card-stat">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border flex items-center justify-center shrink-0">
+                        <i data-lucide="clock" class="w-8 h-8 text-primary"></i>
+                    </div>
+                    <div>
+                        <p class="text-4xl font-black text-text-main leading-none mb-1">{{ pending_count }}</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-60">Under
+                            Review</p>
+                    </div>
+                </div>
+
+                <div class="card card-stat">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border flex items-center justify-center shrink-0">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-success"></i>
+                    </div>
+                    <div>
+                        <p class="text-4xl font-black text-text-main leading-none mb-1">{{ active_reports }}</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-60">Active
+                            Files</p>
+                    </div>
+                </div>
+
+                <a href="{% url 'items:inbox' %}" class="sm:col-span-2 group no-underline">
+                    <div
+                        class="card card-stat bg-primary/[0.02] border-primary/10 group-hover:bg-primary/[0.05] transition-colors">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-border flex items-center justify-center shrink-0 relative">
+                            <i data-lucide="mail" class="w-8 h-8 text-primary"></i>
+                            {% if unread_chats > 0 %}
+                            <span
+                                class="absolute -top-1 -right-1 w-5 h-5 bg-primary border-4 border-white rounded-full"></span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 flex justify-between items-center pr-4">
+                            <div>
+                                <p class="text-4xl font-black text-text-main leading-none mb-1">{{ unread_chats }}</p>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-60">
+                                    Unread Messages</p>
+                            </div>
+                            <i data-lucide="arrow-right"
+                                class="w-6 h-6 text-primary opacity-20 group-hover:translate-x-2 transition-transform"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if is_admin %}
+        <div class="card card-premium bg-slate-900 text-white border-none shadow-2xl">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h3 class="text-xl font-black uppercase tracking-widest text-white">Staff Oversight</h3>
+                    <p class="text-[10px] uppercase font-bold text-slate-500">System-wide critical metrics</p>
+                </div>
+                <div class="badge !bg-white/10 !text-white !border-white/10">Administrator View</div>
+            </header>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                <div class="text-center p-8 rounded-3xl bg-white/5 border border-white/5">
+                    <p class="text-4xl font-black text-primary-light mb-1">{{ global_pending }}</p>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Queue</p>
+                </div>
+                <div class="text-center p-8 rounded-3xl bg-white/5 border border-white/5">
+                    <p class="text-4xl font-black text-emerald-400 mb-1">{{ total_claims }}</p>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Claims</p>
+                </div>
+                <div class="text-center p-8 rounded-3xl bg-white/5 border border-white/5 col-span-2 sm:col-span-1">
+                    <p class="text-4xl font-black text-white mb-1">{{ total_users }}</p>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Users</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Feed: Recent Activity -->
+        <div class="card card-premium">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h3 class="text-xl font-black uppercase tracking-widest text-text-main">Pulse Feed</h3>
+                    <p class="text-[10px] uppercase font-bold text-text-light opacity-50">Latest platform updates</p>
+                </div>
+                <a href="{% url 'items:notifications' %}"
+                    class="text-[10px] font-black uppercase text-primary hover:text-primary-alt transition-colors no-underline">View
+                    All</a>
+            </header>
+
+            <div class="flex flex-col gap-4">
+                {% for log in recent_notifications %}
+                <div class="card card-activity group hover:border-primary/20 transition-all">
+                    <div class="flex items-center gap-5">
+                        <div
+                            class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 
+                            {% if log.category == 'admin' %}bg-danger/10 text-danger{% elif log.category == 'activity' %}bg-secondary/10 text-secondary{% else %}bg-primary/10 text-primary{% endif %}">
+                            <i data-lucide="{% if log.category == 'admin' %}shield-alert{% elif log.category == 'activity' %}user-check{% else %}bell{% endif %}"
+                                class="w-6 h-6"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h5
+                                class="text-sm font-black text-text-main truncate group-hover:text-primary transition-colors">
+                                {{ log.title }}</h5>
+                            <p class="text-[11px] font-bold text-text-light opacity-60 uppercase">{{
+                                log.created_at|timesince }} ago</p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-16 opacity-20">
+                    <i data-lucide="bell-off" class="w-12 h-12 mx-auto mb-4"></i>
+                    <p class="text-[10px] font-black uppercase tracking-widest">No recent pulse detected</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Global Analytics -->
+    <div class="lg:col-span-2">
+        <div class="card card-premium h-full flex flex-col items-center justify-center text-center">
+            <div class="relative mb-12">
+                <div
+                    class="w-56 h-56 rounded-full border-[12px] border-bg-main flex items-center justify-center shadow-inner relative">
+                    <div class="absolute inset-0 rounded-full border-[12px] border-primary"
+                        style="clip-path: polygon(0 0, 100% 0, 100% {{ recovery_rate }}%, 0 {{ recovery_rate }}%);">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-6xl font-black text-text-main tracking-tighter">{{ recovery_rate }}%</span>
+                        <span
+                            class="text-[10px] font-bold text-text-light uppercase tracking-[0.2em] opacity-50 mt-2">Platform
+                            Success</span>
+                    </div>
+                </div>
+                <div
+                    class="absolute -top-4 -right-4 w-14 h-14 bg-white rounded-2xl shadow-premium border border-border flex items-center justify-center text-emerald-500 animate-bounce duration-[3000ms]">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+            </div>
+
+            <h4 class="text-2xl font-black uppercase tracking-tight text-text-main mb-4">Institutional Hub</h4>
+            <p class="text-sm font-bold text-text-light/70 mb-10 max-w-xs leading-relaxed">
+                The hub is currently resolving assets at an institutional efficiency of {{ recovery_rate }}%.
+            </p>
+
+            {% if is_admin %}
+            <div class="w-full h-px bg-border/40 mb-10"></div>
+            {% include 'includes/components/btn.html' with label="View Full Analytics" icon="chevron-right"
+            variant="ghost" class="w-full !p-6 border-2 border-border/50 rounded-2.5rem" url="items:admin_analytics" %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

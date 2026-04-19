@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}History - DMMMSU Recovery Hub{% endblock %}
+
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">History</span>
+{% endblock %}
+
+{% block content %}
+<header class="mb-12">
+    <div class="flex items-center gap-3 mb-4">
+        <span class="flex h-3 w-3 rounded-full bg-primary shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
+        <span class="text-[10px] font-black uppercase tracking-[0.25em] text-text-light opacity-60">System Ledger</span>
+    </div>
+    <h1 class="page-title text-5xl mb-4 tracking-tighter">History Vault</h1>
+    <p class="page-subtitle max-w-lg italic opacity-70">A chronological record of every reported asset, including contributions from both campus members and administrative staff.</p>
+</header>
+
+<!-- Global Volume Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <!-- Active Records Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-primary">
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Total Registry</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">{{ total_records_count }} <span class="text-xs text-text-light font-bold">Files</span></div>
+    </div>
+
+    <!-- Total Found Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-success/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-success">
+            <div class="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Items Found</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">{{ total_found }}</div>
+    </div>
+
+    <!-- Total Lost Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-secondary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-secondary">
+            <div class="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                <i data-lucide="trending-down" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Items Lost</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">{{ total_lost }}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-8">
+    <div class="w-full">
+        <section class="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <i data-lucide="list-tree" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-text-main uppercase tracking-tighter mb-0">Global Registry Table</h3>
+                </div>
+                
+                <!-- Filters & Search -->
+                <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                    <!-- Status Filter -->
+                    <div class="relative w-full sm:w-40">
+                        <select onchange="window.location.href = '?status=' + this.value" class="w-full bg-slate-50/50 border-2 border-slate-100 text-[10px] font-black uppercase tracking-widest text-text-main rounded-xl px-4 py-2.5 outline-none appearance-none pr-10 cursor-pointer focus:bg-white focus:border-primary/30 transition-all shadow-inner">
+                            <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Records</option>
+                            <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active Only</option>
+                            <option value="resolved" {% if current_status == 'resolved' %}selected{% endif %}>Resolved Only</option>
+                            <option value="claimed" {% if current_status == 'claimed' %}selected{% endif %}>Claimed</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-light pointer-events-none"></i>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="relative w-full sm:w-72">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light group-focus-within:text-primary transition-colors"></i>
+                        <input type="text" id="historySearchInput" placeholder="Quick find..." class="w-full bg-slate-50/50 border-2 border-slate-100 text-sm font-bold text-text-main rounded-xl pl-12 pr-4 py-2.5 outline-none focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all shadow-inner">
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto overflow-visible">
+                <table class="w-full text-left" id="historyRecordTable" style="border-collapse: separate; border-spacing: 0 12px;">
+                    <thead>
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-text-light">
+                            <th class="pb-2 px-6">Asset Name</th>
+                            <th class="pb-2 px-6">Reporter</th>
+                            <th class="pb-2 px-6 text-center">Status</th>
+                            <th class="pb-2 px-6">Date</th>
+                            <th class="pb-2 px-6 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="space-y-4">
+                        {% for record in records %}
+                        <tr class="history-row bg-white/60 hover:bg-white border border-white/80 rounded-2xl transition-all duration-300 group shadow-sm hover:shadow-md hover:-translate-y-1">
+                            <td class="py-5 px-6 first:rounded-l-2xl">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                        <i data-lucide="{% if record.category == 'money' %}banknote{% elif record.category == 'electronics' %}smartphone{% elif record.category == 'id' %}credit-card{% else %}package{% endif %}" class="w-5 h-5 text-primary opacity-60"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-black text-sm text-text-main">{{ record.name }}</div>
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-text-light opacity-50">{{ record.category|default:"General" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-5 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-bg-main border border-border flex items-center justify-center font-black text-[10px] text-text-main">
+                                        {{ record.owner.username|slice:":1"|upper }}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-black text-text-main underline decoration-primary/20">@{{ record.owner.username }}</span>
+                                        {% if record.owner.is_staff %}
+                                            <span class="text-[8px] font-black text-primary uppercase tracking-widest">Administrator</span>
+                                        {% else %}
+                                            <span class="text-[8px] font-black text-text-light uppercase tracking-widest opacity-60">Member</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-5 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm
+                                    {% if record.lifecycle_status == 'claimed' %} bg-amber-100 text-amber-700 border border-amber-200
+                                    {% elif record.lifecycle_status == 'resolved' %} bg-success/10 text-success border border-success/20
+                                    {% elif record.report_type == 'found' %} bg-primary/10 text-primary border border-primary/20
+                                    {% elif record.report_type == 'lost' %} bg-secondary/10 text-secondary border border-secondary/20
+                                    {% else %} bg-slate-100 text-text-muted border border-slate-200 {% endif %}">
+                                    {% if record.lifecycle_status == 'claimed' %}Claimed
+                                    {% elif record.lifecycle_status == 'resolved' %}Resolved
+                                    {% else %}{{ record.report_type }}{% endif %}
+                                </span>
+                            </td>
+                            <td class="py-5 px-6 text-[10px] font-black text-text-light uppercase tracking-widest">
+                                {{ record.date_reported|date:"M d, Y" }}
+                            </td>
+                            <td class="py-5 px-6 text-right last:rounded-r-2xl">
+                                <button @click.prevent="openModal('Item Details', '{% url 'items:item_detail' record.id %}', 'max-w-4xl')" 
+                                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-white border border-slate-100 text-text-light hover:text-primary hover:border-primary/30 hover:shadow-sm transition-all group-hover:scale-110">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-32 text-center">
+                                <div class="flex flex-col items-center gap-4 opacity-30">
+                                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center">
+                                        <i data-lucide="database-zap" class="w-10 h-10 text-text-muted"></i>
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest mt-2">No records found</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+    // Simple table filtering
+    const searchInput = document.getElementById('historySearchInput');
+    const table = document.getElementById('historyRecordTable');
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = table.getElementsByClassName('history-row');
+            
+            Array.from(rows).forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+</script>
+{% endblock %}

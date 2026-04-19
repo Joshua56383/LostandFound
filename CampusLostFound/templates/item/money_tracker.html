@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Money Tracker - DMMMSU Recovery Hub{% endblock %}
+
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Money Tracker</span>
+{% endblock %}
+
+{% block content %}
+<header class="mb-12">
+    <!-- Streamlined header -->
+</header>
+
+<!-- Financial Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <!-- Total Found Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-primary">
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Total Assets Found</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">₱{{ total_found|default:"0.00" }}</div>
+    </div>
+
+    <!-- Total Lost Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-secondary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-secondary">
+            <div class="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                <i data-lucide="trending-down" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Total Assets Lost</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">₱{{ total_lost|default:"0.00" }}</div>
+    </div>
+
+    <!-- Active Records Card -->
+    <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-secondary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+        <div class="flex items-center gap-4 mb-4 text-secondary">
+            <div class="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-widest opacity-60">Record Volume</span>
+        </div>
+        <div class="text-4xl font-black text-text-main">{{ total_records_count }} <span class="text-xs text-text-light font-bold">Files</span></div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-8">
+    <!-- Ledger Module (Full Width now) -->
+    <div class="w-full">
+        <section class="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-text-main uppercase tracking-tighter mb-0">Money Log</h3>
+                </div>
+                
+                <!-- Search -->
+                <div class="relative w-full sm:w-72">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light group-focus-within:text-primary transition-colors"></i>
+                    <input type="text" id="moneySearchInput" placeholder="Filter by location..." class="w-full bg-slate-50/50 border-2 border-slate-100 text-sm font-bold text-text-main rounded-xl pl-12 pr-4 py-2.5 outline-none focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 transition-all shadow-inner">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto overflow-visible">
+                <table class="w-full text-left" id="moneyRecordTable" style="border-collapse: separate; border-spacing: 0 12px;">
+                    <thead>
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-text-light">
+                            <th class="pb-2 px-6">Amount</th>
+                            <th class="pb-2 px-6">Location</th>
+                            <th class="pb-2 px-6 text-center">Status</th>
+                            <th class="pb-2 px-6">Date</th>
+                            <th class="pb-2 px-6 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="space-y-4">
+                        {% for record in records %}
+                        <tr class="money-row bg-white/60 hover:bg-white border border-white/80 rounded-2xl transition-all duration-300 group shadow-sm hover:shadow-md hover:-translate-y-1">
+                            <td class="py-5 px-6 font-black text-lg text-primary first:rounded-l-2xl">
+                                ₱{{ record.amount }}
+                            </td>
+                            <td class="py-5 px-6 text-sm font-bold text-text-main">
+                                {{ record.location }}
+                            </td>
+                            <td class="py-5 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm
+                                    {% if record.status == 'found' %} bg-primary/10 text-primary border border-primary/20
+                                    {% elif record.status == 'lost' %} bg-secondary/10 text-secondary border border-secondary/20
+                                    {% else %} bg-slate-100 text-text-muted border border-slate-200 {% endif %}">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                            <td class="py-5 px-6 text-[10px] font-black text-text-light uppercase tracking-widest">
+                                {{ record.date_reported|date:"M d, Y" }}
+                            </td>
+                            <td class="py-5 px-6 text-right last:rounded-r-2xl">
+                                <button @click.prevent="openModal('', '{% url 'items:item_detail' record.id %}', 'max-w-4xl')" 
+                                        class="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-white border border-slate-100 text-text-light hover:text-primary hover:border-primary/30 hover:shadow-sm transition-all group-hover:scale-110">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-32 text-center">
+                                <div class="flex flex-col items-center gap-4 opacity-30">
+                                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center">
+                                        <i data-lucide="banknote" class="w-10 h-10 text-text-muted"></i>
+                                    </div>
+                                    <span class="text-xs font-black uppercase tracking-widest mt-2">No records found</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/money_script.js' %}"></script>
+{% endblock %}

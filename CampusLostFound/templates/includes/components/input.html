@@ -1,0 +1,53 @@
+{% comment %} 
+  Systemic Intelligence: Reusable Input Component
+  Standardized for the DMMMSU design system.
+{% endcomment %}
+
+{% spaceless %}
+<div class="form-group {{ wrapper_class }}"
+     x-data="{ 
+        inputType: '{{ type|default:'text' }}',
+        toggle() { this.inputType = this.inputType === 'password' ? 'text' : 'password' } 
+     }">
+  {% if label %}
+    <label for="{{ id|default:'id_'|add:name }}" class="form-label">
+      {{ label }}
+      {% if required %}<span class="text-danger ml-1">*</span>{% endif %}
+    </label>
+  {% endif %}
+  
+  <div class="relative group">
+    {% if icon_class %}
+      <div class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary pointer-events-none transition-colors duration-300">
+        <i data-lucide="{{ icon_class }}" class="w-5 h-5" aria-hidden="true"></i>
+      </div>
+    {% endif %}
+    
+    <input
+      :type="inputType"
+      name="{{ name }}"
+      id="{{ id|default:'id_'|add:name }}"
+      placeholder="{{ placeholder }}"
+      {% if value %}value="{{ value }}"{% endif %}
+      {% if required %}required{% endif %}
+      {% if x_model %}x-model="{{ x_model }}"{% endif %}
+      
+      class="input-field {% if icon_class %}pl-14{% endif %} {% if allow_toggle and type == 'password' %}pr-14{% endif %} {{ class }}"
+    >
+
+    {% if allow_toggle and type == 'password' %}
+      <button type="button" @click="toggle()" class="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors focus:outline-none">
+        <i :data-lucide="inputType === 'password' ? 'eye' : 'eye-off'" class="w-5 h-5"></i>
+      </button>
+    {% endif %}
+  </div>
+  
+  {% if error %}
+    <p class="form-error">{{ error }}</p>
+  {% endif %}
+  
+  {% if help_text %}
+    <p class="form-help">{{ help_text }}</p>
+  {% endif %}
+</div>
+{% endspaceless %}

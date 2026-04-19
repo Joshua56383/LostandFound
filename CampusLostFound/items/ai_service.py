@@ -1,107 +1,109 @@
 import os
 from google import genai
-from openai import OpenAI
+from google.genai import types
 from django.core.cache import cache
 from dotenv import load_dotenv
-from PIL import Image
-import sys
 
 # Load environment variables
 load_dotenv()
 
-# Configure APIs
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-gemini_client = None
-if gemini_api_key:
-    gemini_client = genai.Client(api_key=gemini_api_key)
-
-openai_api_key = os.getenv("OPENAI_API_KEY")
-client = None
-if openai_api_key:
-    client = OpenAI(api_key=openai_api_key)
+# Configure Gemini client once
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
 
 
 def generate_notification_message(item, status):
     """
-    Generate a dynamic notification message using AI (OpenAI primary, Gemini fallback).
+    Generate a dynamic notification message using Gemini AI.
     """
 
-    # 1. Check if we're running tests to avoid API limits
-    import sys
-    if 'test' in sys.argv:
-        return _generate_fallback_message(item, status)
-
-    # 1b. Check cache
+    # 1. Check cache
     cache_key = f"ai_notif_{item.id}_{status}"
     cached_msg = cache.get(cache_key)
     if cached_msg:
         return cached_msg
 
-    # 2. Try OpenAI
-    if client:
-        try:
-            model_name = os.getenv("OPENAI_MODEL_NAME", "gpt-4o-mini")
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": "You are an AI assistant for a Lost and Found Management System. Write a short notification message (1–2 sentences)."},
-                    {"role": "user", "content": f"Item Name: {item.name}\nCategory: {item.category}\nLocation: {item.location}\nDescription: {item.description}\nStatus: {status}\nDate Reported: {item.date_reported}\n\nGenerate only the notification message."}
-                ],
-                max_tokens=100
-            )
-            ai_message = response.choices[0].message.content.strip()
-            if ai_message:
-                cache.set(cache_key, ai_message, timeout=86400)
-                return ai_message
-        except Exception as e:
-            print(f"OpenAI API Error: {e}")
+    # 2. If no API key or client → fallback
+    if not client:
+        return _generate_fallback_message(item, status)
 
-    # 3. Try Gemini fallback
-    if gemini_client:
-        try:
-            model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
-            prompt = f"You are an AI assistant for a Lost and Found Management System. Write a short notification message (1–2 sentences).\n\nItem Name: {item.name}\nCategory: {item.category}\nLocation: {item.location}\nDescription: {item.description}\nStatus: {status}\nDate Reported: {item.date_reported}\n\nGenerate only the notification message."
-            
-            response = gemini_client.models.generate_content(
-                model=model_name,
-                contents=prompt
-            )
-            ai_message = response.text.strip()
-            if ai_message:
-                cache.set(cache_key, ai_message, timeout=86400)
-                return ai_message
-        except Exception as e:
-            if "429" in str(e):
-                print(f"Gemini API Quota Exceeded (429): {e}")
-            else:
-                print(f"Gemini API Error: {e}")
+    try:
+        # 3. Model name
+        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
 
-    # 4. Final fallback
-    return _generate_fallback_message(item, status)
+        # 4. Prompt
+        prompt = f"""
+        You are the Recovery Hub Concierge for DMMMSU. 
+        Your goal is to provide clear, empathetic, and professional updates to students about their lost or found items.
+        
+        Write a warm, concise notification (max 150 characters).
+        
+        Item: {item.name}
+        Category: {item.category}
+        Location: {item.location}
+        Status Context: {status}
+        
+        Guidelines:
+        - Be human, not robotic.
+        - Use campus-friendly language.
+        - Encourage the student.
+        """
+
+        # 5. Generate content using new SDK
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+        )
+
+        ai_message = response.text.strip()
+
+        if not ai_message:
+            raise ValueError("Empty response from Gemini")
+
+        # 6. Cache result (24 hours)
+        cache.set(cache_key, ai_message, timeout=86400)
+
+        return ai_message
+
+    except Exception as e:
+        print(f"Gemini API Error: {e}")
+        return _generate_fallback_message(item, status)
 
 
 def extract_image_tags(image_path):
     """
-    Extract visual tags from an image using Gemini Vision.
+    Extract AI tags from an item image using Gemini Vision.
     """
-    if 'test' in sys.argv:
-        return "test, image, tags"
-
-    if not gemini_client:
+    if not client or not image_path or not os.path.exists(image_path):
         return ""
 
     try:
-        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+        # 1. Clean model name
+        model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash").strip()
+        # The new SDK adds 'models/' automatically if missing, but sometimes 
+        # double 'models/models/' happens if not careful. We pass it clean.
         
-        with Image.open(image_path) as img:
-            prompt = "Identify the main object, color, brand, and any distinctive features in this image. Return 5 to 10 comma-separated keywords (e.g. 'black, leather, wallet, expensive')."
-            
-            response = gemini_client.models.generate_content(
-                model=model_name,
-                contents=[prompt, img]
-            )
-            
-            return response.text.strip()
+        if not image_path or not os.path.exists(image_path):
+            return ""
+
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+
+        # Detect MIME type from extension
+        ext = os.path.splitext(image_path)[-1].lower()
+        mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+        mime_type = mime_map.get(ext, "image/jpeg")
+
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                "List 5-10 concise keywords describing this item for a lost-and-found system. Separate with commas. No sentences.",
+            ],
+        )
+
+        return response.text.strip()
+
     except Exception as e:
         print(f"Gemini Vision Error: {e}")
         return ""
@@ -113,15 +115,15 @@ def _generate_fallback_message(item, status):
     """
 
     messages = {
-        'lost_reported': f"A new lost item '{item.name}' has been reported at {item.location}.",
-        'found_reported': f"A new found item '{item.name}' has been submitted at {item.location}.",
-        'match_detected': f"A possible match for your lost '{item.name}' has been found.",
-        'claim_submitted': f"A claim request has been submitted for the '{item.name}'.",
-        'claim_approved': f"Your claim for the '{item.name}' has been approved.",
-        'claim_rejected': f"Your claim for the '{item.name}' was not approved.",
-        'resolved': f"The status of '{item.name}' has been marked as resolved.",
-        'item_approved': f"Your reported item '{item.name}' has been approved and is now visible.",
-        'item_rejected': f"Your reported item '{item.name}' was not approved by the admin.",
+        'lost_reported': f"Your report for '{item.name}' is now live. We're keeping a close watch on the registry for you!",
+        'found_reported': f"Success! '{item.name}' has been safely reported. Our matching engine is already at work.",
+        'match_detected': f"Exciting news! We've found a potential match for your lost '{item.name}'. Click to see if it's yours.",
+        'claim_submitted': f"Your claim for '{item.name}' has been received. Our staff will review it shortly.",
+        'claim_approved': f"Great news! Your claim for '{item.name}' was approved. You can now get your Handover Pass.",
+        'claim_rejected': f"Update: Your claim for '{item.name}' couldn't be verified at this time. Please contact staff for help.",
+        'resolved': f"Mission accomplished! '{item.name}' has been officially returned to its owner.",
+        'item_approved': f"Your report for '{item.name}' is approved and visible to the campus community.",
+        'item_rejected': f"We couldn't approve your report for '{item.name}'. Please ensure your description is clear and try again.",
     }
 
     return messages.get(

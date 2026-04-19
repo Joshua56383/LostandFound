@@ -1,0 +1,86 @@
+{% extends base_template %}
+{% block content %}
+<div class="flex flex-col gap-8">
+    <!-- Header with User Identity -->
+    <div class="bg-primary p-8 rounded-3xl text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-secondary rounded-full blur-3xl opacity-20"></div>
+        <div class="relative z-10 flex items-center gap-6">
+            <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-md shadow-xl">
+                {% if target_user.userprofile.avatar %}
+                <img src="{{ target_user.userprofile.avatar.url }}" class="w-full h-full object-cover rounded-2xl">
+                {% else %}
+                <span class="text-2xl font-black">{{ target_user.username|slice:":1"|upper }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <h2 class="text-2xl font-black tracking-tight uppercase">{{ target_user.get_full_name|default:target_user.username }}</h2>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="px-2 py-0.5 rounded-lg bg-white/10 border border-white/10 text-[9px] font-black uppercase tracking-widest">{{ target_user.email }}</span>
+                    <span class="px-2 py-0.5 rounded-lg bg-white/10 border border-white/10 text-[9px] font-black uppercase tracking-widest">ID: {{ target_user.userprofile.student_staff_id|default:"---" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Controls -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Role Control -->
+        <div class="bg-white p-6 border-2 border-slate-50 rounded-3xl shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><i data-lucide="shield" class="w-4 h-4"></i></div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-text-light">Access Level</h3>
+            </div>
+            <p class="text-xs font-bold text-text-muted mb-6 leading-relaxed">Current: <strong>{% if target_user.is_staff %}Administrator{% else %}Standard Member{% endif %}</strong></p>
+            <form action="{% url 'items:toggle_user_role' target_user.id %}" method="post" @submit.prevent="const f = $el; customConfirm('Change Role', 'Toggle this users administrative status?', () => f.submit())">
+                {% csrf_token %}
+                <button type="submit" class="btn w-full {% if target_user.is_staff %}btn-secondary{% else %}btn-primary{% endif %} py-4 text-[10px]">
+                    {% if target_user.is_staff %}Demote to Member{% else %}Promote to Admin{% endif %}
+                </button>
+            </form>
+        </div>
+
+        <!-- Status Control -->
+        <div class="bg-white p-6 border-2 border-slate-50 rounded-3xl shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center"><i data-lucide="power" class="w-4 h-4"></i></div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-text-light">Account Status</h3>
+            </div>
+            <p class="text-xs font-bold text-text-muted mb-6 leading-relaxed">Account is currently <strong>{% if target_user.is_active %}Active{% else %}Suspended{% endif %}</strong>.</p>
+            <form action="{% url 'items:toggle_user_active' target_user.id %}" method="post" @submit.prevent="const f = $el; customConfirm('Change Status', 'Are you sure you want to change this accounts visibility?', () => f.submit())">
+                {% csrf_token %}
+                <button type="submit" class="btn w-full {% if target_user.is_active %}btn-secondary{% else %}btn-primary{% endif %} py-4 text-[10px]">
+                    {% if target_user.is_active %}Deactivate Account{% else %}Activate Account{% endif %}
+                </button>
+            </form>
+        </div>
+
+        <!-- Password Control -->
+        <div class="bg-white p-6 border-2 border-slate-50 rounded-3xl shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-slate-50 text-text-light flex items-center justify-center"><i data-lucide="key" class="w-4 h-4"></i></div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-text-light">Security</h3>
+            </div>
+            <form action="{% url 'items:reset_user_password' target_user.id %}" method="post" @submit.prevent="const f = $el; customConfirm('Reset Password', 'Generate a new temporary password for this user?', () => f.submit())">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost border-2 border-slate-100 hover:border-primary w-full py-4 text-[10px]">
+                    Reset Password
+                </button>
+            </form>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="bg-danger/5 border-2 border-danger/10 p-6 rounded-3xl group transition-all hover:bg-danger/10">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-white text-danger flex items-center justify-center"><i data-lucide="trash-2" class="w-4 h-4"></i></div>
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-danger">Danger Zone</h3>
+            </div>
+            <form action="{% url 'items:delete_user_admin' target_user.id %}" method="post" @submit.prevent="const f = $el; customConfirm('DELETE ACCOUNT', 'WARNING: This will permanently delete the account. This cannot be undone.', () => f.submit())">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost bg-white text-danger border-2 border-danger w-full py-4 text-[10px]">
+                    Delete Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

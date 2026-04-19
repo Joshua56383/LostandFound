@@ -1,0 +1,106 @@
+{% extends base_template %}
+{% load static %}
+
+{% block title %}System Audit Journal - Admin Control{% endblock %}
+
+{% block content %}
+<header class="flex flex-col sm:flex-row justify-between items-start md:items-end gap-6 mb-12">
+    <div>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="flex h-3 w-3 rounded-full bg-primary shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
+            <span class="text-[10px] font-black uppercase tracking-[0.25em] text-text-light opacity-60">System Forensics</span>
+        </div>
+        <h1 class="page-title text-5xl mb-4 tracking-tighter">Activity Journal</h1>
+        <p class="page-subtitle max-w-lg">A real-time ledger of all administrative and user-driven events across the recovery hub registry.</p>
+    </div>
+</header>
+
+<div class="bg-white border border-border/40 rounded-[3rem] shadow-sm relative overflow-hidden">
+    <div class="p-10 border-b border-border/30 bg-slate-50/50 flex justify-between items-center">
+        <h3 class="text-xs font-black uppercase tracking-widest text-text-main">Audit Trail</h3>
+        <div class="px-4 py-1.5 rounded-full bg-white border border-border/40 text-[9px] font-black uppercase tracking-widest text-text-light">
+            {{ page_obj.paginator.count }} Events Logged
+        </div>
+    </div>
+
+    <div class="px-6 lg:px-10 py-4">
+        {% for log in page_obj %}
+        <div class="relative pl-12 pb-12 last:pb-0 group">
+            <!-- Timeline Line -->
+            {% if not forloop.last %}
+            <div class="absolute left-5 top-10 bottom-0 w-0.5 bg-slate-100 group-hover:bg-primary/20 transition-colors"></div>
+            {% endif %}
+
+            <!-- Timeline Dot / Icon -->
+            <div class="absolute left-0 top-0 w-10 h-10 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center z-10 shadow-sm group-hover:border-primary/40 group-hover:shadow-lg transition-all">
+                <i data-lucide="{% if 'Approve' in log.action %}check-circle{% elif 'Reject' in log.action %}x-circle{% elif 'Delete' in log.action %}trash-2{% elif 'Login' in log.action %}log-in{% else %}activity{% endif %}" 
+                   class="w-5 h-5 {% if 'Approve' in log.action %}text-success{% elif 'Reject' in log.action or 'Delete' in log.action %}text-danger{% else %}text-primary{% endif %}"></i>
+            </div>
+
+            <div class="bg-slate-50/30 border border-transparent hover:border-border/60 hover:bg-white rounded-[2rem] p-6 transition-all group-hover:shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-white border border-border/40 flex items-center justify-center font-black text-xs text-text-main shadow-inner">
+                            {{ log.user.username|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-sm font-black text-text-main">@{{ log.user.username }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-primary/5 text-primary text-[8px] font-black uppercase tracking-widest border border-primary/10">
+                                    {% if log.user.is_staff %}Staff Intelligence{% else %}Authenticated User{% endif %}
+                                </span>
+                            </div>
+                            <p class="text-[10px] font-bold text-text-light opacity-50">{{ log.created_at|date:"M d, Y" }} at {{ log.created_at|date:"H:i:s" }}</p>
+                        </div>
+                    </div>
+                    <div class="px-4 py-1.5 rounded-full bg-white border border-border/40 text-[9px] font-black uppercase tracking-[0.2em] text-text-main">
+                        {{ log.action }}
+                    </div>
+                </div>
+                
+                <div class="pl-14">
+                    <p class="text-sm font-bold text-text-main leading-relaxed opacity-80">{{ log.details }}</p>
+                    {% if log.item %}
+                    <div class="mt-4 flex items-center gap-2">
+                        <i data-lucide="link-2" class="w-3.5 h-3.5 text-primary opacity-40"></i>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-60">Related Asset:</span>
+                        <a href="{{ log.item.get_absolute_url }}" class="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">ID #{{ log.item.id }} ({{ log.item.name }})</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="flex flex-col items-center justify-center py-32 text-center">
+            <div class="w-20 h-20 bg-slate-50 text-text-light opacity-20 rounded-[2rem] border-2 border-dashed border-border flex items-center justify-center mb-6">
+                <i data-lucide="database-zap" class="w-10 h-10"></i>
+            </div>
+            <h4 class="text-lg font-black text-text-main uppercase tracking-tight">Journal Empty</h4>
+            <p class="text-xs font-bold text-text-light opacity-60">No system events have been recorded in the current epoch.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="p-10 border-t border-border/30 bg-slate-50/50 flex justify-between items-center">
+        <span class="text-[10px] font-black text-text-light uppercase tracking-widest">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        <div class="flex gap-3">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-border/40 hover:border-primary/40 hover:text-primary transition-all shadow-sm">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-border/40 hover:border-primary/40 hover:text-primary transition-all shadow-sm">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

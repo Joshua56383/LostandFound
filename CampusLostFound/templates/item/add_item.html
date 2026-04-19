@@ -1,91 +1,366 @@
-{% extends 'base.html' %}
+{% extends base_template %}
 {% load static %}
 
-{% block title %}Report {% if report_type == 'lost' %}Lost{% else %}Found{% endif %} Item{% endblock %}
+{% block title %}Report Item - DMMMSU Recovery Hub{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-<style>
-    .fade-up {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .fade-up.active {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    [x-cloak] { display: none !important; }
-</style>
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<a href="{% url 'items:item_list' %}" class="hover:text-primary transition-colors">Browse</a>
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">New Report</span>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 py-12" x-data="{ loaded: false }" x-init="setTimeout(() => loaded = true, 50)" x-cloak>
-    <button onclick="window.history.back()" class="flex items-center gap-2 text-sm font-bold text-gray-500 mb-8 fade-up" :class="{ 'active': loaded }">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
-    </button>
+<div class="w-full relative pt-6" x-data="reportingForm()" x-init="init()">
+    
+    <!-- Centered Header with "The Twist" -->
+    <div class="px-10 pt-10 pb-4 text-center">
+        <!-- Integrated Close Button -->
+        <button @click="closeModal()" class="absolute right-6 top-6 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
 
-    <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden fade-up" :class="{ 'active': loaded }" style="transition-delay: 100ms;">
-        <div class="{% if report_type == 'lost' %}bg-red-500{% else %}bg-emerald-500{% endif %} px-10 py-12 text-white relative overflow-hidden">
-            <div class="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <div class="relative z-10">
-                <h2 class="text-3xl font-extrabold tracking-tight">Report {% if report_type == 'lost' %}Lost{% else %}Found{% endif %} Item</h2>
-                <p class="text-white/80 mt-2 font-medium">Help our community by providing clear, accurate details.</p>
-            </div>
-        </div>
-
-        <form method="POST" enctype="multipart/form-data" class="p-10 space-y-8">
+        <!-- Simple Header -->
+        <h1 class="text-3xl font-black tracking-tight mb-2" x-text="currentStatus === 'lost' ? 'Report Lost Item' : 'Report Found Item'"></h1>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary opacity-60 mb-8" x-text="currentStatus === 'lost' ? 'Tell us what you lost' : 'Help return this to its owner'"></p>
+    </div>
+        
+        <form method="POST" action="{% url 'items:add_item' %}" enctype="multipart/form-data" id="report-form" @submit.prevent="handleFormSubmit" novalidate>
             {% csrf_token %}
-            <input type="hidden" name="status" value="{{ report_type|default:'lost' }}">
+            <input type="hidden" name="report_type" :value="currentStatus">
 
-            <div class="space-y-6">
-                <div class="form-group">
-                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Item Name</label>
-                    <input type="text" name="name" required value="{{ form.name.value|default:'' }}" 
-                        placeholder="e.g., iPhone 13, Blue Backpack"
-                        class="w-full px-5 py-4 rounded-2xl border-0 bg-gray-50 font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all" />
+            <div class="px-10 pb-10">
+                <!-- STEP 1: ITEM IDENTITY (Hick's Law - Grouping) -->
+                <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+                    <div>
+                        <label class="form-label-premium">ITEM NAME *</label>
+                        <input type="text" name="name" required 
+                               class="input-field placeholder-gray-300" 
+                               placeholder="e.g., Blue Backpack or Keys" 
+                               value="{{ form.name.value|default:'' }}">
+                    </div>
+
+                    <div>
+                        <label class="form-label-premium">DESCRIPTION *</label>
+                        <textarea name="description" rows="3" required
+                                  class="input-field placeholder-gray-300 resize-none" 
+                                  placeholder="Provide detailed description (unique marks, brand, etc.)">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <label class="form-label-premium">CATEGORY *</label>
+                            <div class="relative" x-data="{ open: false }">
+                                <input type="text" 
+                                       x-model="categorySearch"
+                                       @focus="open = true"
+                                       @click.away="open = false"
+                                       @input="open = true"
+                                       class="input-field py-3 pr-12 text-xs font-bold uppercase tracking-tight" 
+                                       placeholder="Search or Select Category...">
+                                       
+                                <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                                <input type="hidden" name="category" :value="selectedCategory" required>
+
+                                <div x-show="open" x-transition
+                                     class="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-massive z-[60] p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                    <template x-for="cat in filteredCategories" :key="cat">
+                                        <button type="button" 
+                                                @click="selectedCategory = cat; categorySearch = cat; open = false"
+                                                class="w-full text-left px-5 py-3 rounded-xl hover:bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-secondary transition-all flex items-center justify-between group">
+                                            <span x-text="cat"></span>
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" x-show="selectedCategory === cat"></i>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label-premium uppercase">Color / Brand / Unique ID</label>
+                            <input type="text" name="serial_number" class="input-field text-xs font-bold" placeholder="e.g. Red, iPhone 14, or Serial No.">
+                        </div>
+                    </div>
+
+                    <!-- Money Specific Section -->
+                    <div x-show="['Wallet / Money', 'Currency'].includes(selectedCategory)" x-transition class="p-6 bg-amber-50/50 border border-amber-100 rounded-3xl space-y-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                <i data-lucide="banknote" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-amber-700">Money Details</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="text-[9px] font-black text-amber-800/60 uppercase tracking-widest mb-1 block">Total Amount (Optional)</label>
+                                <input type="number" name="amount" step="0.01" class="input-field bg-white" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-black text-amber-800/60 uppercase tracking-widest mb-1 block">Denominations</label>
+                                <input type="text" name="denominations" class="input-field bg-white" placeholder="e.g., 2x $50, 1x $20">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location details moved to Step 1 for immediate visibility -->
+                    <section class="space-y-4 pt-4 border-t border-gray-100">
+                        <label class="form-label-premium">WHERE WAS IT FOUND/LOST? *</label>
+                        <div class="bg-gray-50/50 rounded-2xl p-2 border border-gray-100 shadow-inner">
+                            <div class="grid grid-cols-2 gap-1 mb-2">
+                                <button type="button" @click="locationTab = 'campus'" :class="locationTab === 'campus' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Campus Building</button>
+                                <button type="button" @click="locationTab = 'custom'" :class="locationTab === 'custom' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Specific Spot</button>
+                            </div>
+
+                            <div x-show="locationTab === 'campus'" class="space-y-3 px-1">
+                                <div class="relative">
+                                    <input type="text" x-model="locationSearch" class="input-field py-2.5 text-xs pr-12 bg-white/80" placeholder="Search buildings...">
+                                    <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
+                                </div>
+                                <div class="max-h-[160px] overflow-y-auto space-y-1 pb-2 custom-scrollbar">
+                                    <template x-for="loc in filteredLocations" :key="loc">
+                                        <button type="button" @click="selectLocation(loc)" 
+                                                class="w-full text-left px-4 py-2.5 rounded-xl text-[11px] font-bold text-gray-500 hover:bg-white hover:text-secondary transition-all flex items-center gap-3">
+                                            <div class="w-1.5 h-1.5 rounded-full border-2 border-gray-200" :class="selectedLocation === loc ? 'border-secondary bg-secondary' : ''"></div>
+                                            <span x-text="loc"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div x-show="locationTab === 'custom'" x-cloak class="px-1 pb-2">
+                                <input type="text" x-model="selectedLocation" class="input-field text-xs bg-white/80 border-secondary/20" placeholder="e.g. Near the main entrance, cafeteria table, etc.">
+                            </div>
+                        </div>
+                        <input type="hidden" name="location" :value="selectedLocation" required>
+                        <div class="flex items-center gap-2 px-1" x-show="selectedLocation">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-secondary"></i>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-secondary" x-text="selectedLocation"></span>
+                        </div>
+                    </section>
+
+                    <!-- Date Selection -->
+                    <div class="pt-2">
+                        <label class="form-label-premium">ESTIMATED DATE & TIME *</label>
+                        <div class="relative">
+                            <input type="datetime-local" name="discovery_date" required 
+                                   class="input-field py-4 text-xs font-bold text-secondary uppercase tracking-tight bg-slate-50/50"
+                                   id="id_discovery_date">
+                            <i data-lucide="calendar" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- STEP 2: PHOTO & CONTACT -->
+                <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+                    <div>
+                        <label class="form-label-premium">ADD PHOTO (IMAGE OR PDF) *</label>
+                        <div class="relative group" x-data="{ filename: '' }">
+                            <input type="file" name="image" id="item_image_new" class="hidden" accept="image/*"
+                                   @change="filename = $event.target.files[0].name">
+                            <label for="item_image_new" class="input-field flex flex-col items-center justify-center cursor-pointer border-dashed border-2 border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all min-h-[160px] text-center p-6">
+                                <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+                                    <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+                                </div>
+                                <span class="text-xs font-black text-secondary tracking-widest uppercase" x-text="filename || 'Drop photo here or click to browse'"></span>
+                                <p class="text-[9px] font-bold text-gray-400 mt-2">Maximum file size: 5MB (JPG, PNG)</p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="form-label-premium">CONTACT NAME (OPTIONAL)</label>
+                            <input type="text" name="contact_name" class="input-field text-xs font-bold" placeholder="Fallback Name" value="{{ request.user.get_full_name|default:request.user.username }}">
+                        </div>
+                        <div>
+                            <label class="form-label-premium">CONTACT EMAIL (OPTIONAL)</label>
+                            <input type="email" name="contact_email" class="input-field text-xs font-bold" placeholder="Fallback Email" value="{{ request.user.email }}">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-100 rounded-3xl p-6 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="text-[10px] font-black uppercase tracking-widest text-secondary">Your Information</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Full Name</label>
+                                <p class="text-xs font-bold text-text-main">{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.username }}{% endif %}</p>
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Email Address</label>
+                                <p class="text-xs font-bold text-text-main">{{ request.user.email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Action Bar (Primary/Secondary Differentiation) -->
+            <footer class="px-10 py-8 bg-gray-50/50 flex justify-between items-center border-t border-gray-100 rounded-b-[32px]">
+                <div>
+                    <button type="button" x-show="step > 1" @click="step--" class="h-12 px-8 rounded-full bg-white border-2 border-slate-200 text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-secondary hover:border-secondary transition-all flex items-center gap-2">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        <span>Back</span>
+                    </button>
                 </div>
                 
-                <div class="form-group">
-                    <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Description</label>
-                    <textarea name="description" required rows="4" 
-                        placeholder="Provide details that can help identify the item..."
-                        class="w-full px-5 py-4 rounded-2xl border-0 bg-gray-50 font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all">{{ form.description.value|default:'' }}</textarea>
-                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" @click="closeModal()" class="h-12 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-danger hover:underline transition-all">Cancel</button>
+                    
+                    <button type="button" x-show="step < 2" @click="validateAndNext()" class="h-12 px-10 rounded-full bg-secondary text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg flex items-center gap-2">
+                        <span>Continue</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="form-group">
-                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Category</label>
-                        <div class="relative">
-                            <select name="category" required class="w-full appearance-none px-5 py-4 rounded-2xl border-0 bg-gray-50 font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all">
-                                <option value="Electronics" {% if form.category.value == "Electronics" %}selected{% endif %}>Electronics</option>
-                                <option value="Accessories" {% if form.category.value == "Accessories" %}selected{% endif %}>Accessories</option>
-                                <option value="Other" {% if form.category.value == "Other" %}selected{% endif %}>Other</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Location</label>
-                        <div class="relative">
-                            <select name="location" required class="w-full appearance-none px-5 py-4 rounded-2xl border-0 bg-gray-50 font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all">
-                                <option value="Library" {% if form.location.value == "Library" %}selected{% endif %}>Library</option>
-                                <option value="Cafeteria" {% if form.location.value == "Cafeteria" %}selected{% endif %}>Cafeteria</option>
-                                <option value="Dormitory" {% if form.location.value == "Dormitory" %}selected{% endif %}>Dormitory</option>
-                            </select>
-                            <i data-lucide="map-pin" class="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
-                        </div>
-                    </div>
+                    <button type="submit" x-show="step === 2" class="h-12 px-12 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 flex items-center justify-center whitespace-nowrap" :disabled="submitting">
+                        <span x-show="!submitting">Submit Final Report</span>
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin" x-show="submitting"></i>
+                    </button>
                 </div>
-            </div>
-
-            <div class="pt-8 flex flex-col md:flex-row justify-end gap-3">
-                <a href="{% url 'items:item_list' %}" class="px-8 py-4 rounded-2xl font-bold bg-white border text-gray-500 hover:bg-gray-50 transition-colors text-center">Cancel</a>
-                <button type="submit" class="px-12 py-4 rounded-2xl font-bold text-white shadow-xl active:scale-95 transition-all text-center {% if report_type == 'lost' %}bg-red-500 hover:bg-red-600 shadow-red-500/20{% else %}bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20{% endif %}">
-                    Submit Report
-                </button>
-            </div>
+            </footer>
         </form>
-    </div>
 </div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+    window.reportingForm = function() {
+        const params = new URLSearchParams(window.location.search);
+        let startStatus = '{{ report_type|default:'lost'|escapejs }}';
+        
+        return {
+            step: 1,
+            currentStatus: startStatus,
+            locationTab: 'campus',
+            locationSearch: '',
+            selectedLocation: '{{ form.location.value|default:''|escapejs }}',
+            categorySearch: '{{ form.category.value|default:''|escapejs }}',
+            selectedCategory: '{{ form.category.value|default:''|escapejs }}',
+            submitting: false,
+            gpsLoading: false,
+            campusLocations: [
+                'Administration Building', 'Main Library', 'Student Center', 'CET Building', 
+                'CAS Building', 'CET / Engineering Laboratory', 'JICA Building / JICA-Assisted Facility',
+                'Eco-Park / Campus Park Area', 'Experimental Farm', 'Open Field / Sports Complex',
+                'University Infirmary', 'Computer Center', 'Research & Extension Office'
+            ],
+            categories: [
+                'Phone / Electronics', 'ID / School ID', 'Wallet / Money', 
+                'Books / Notebook', 'Bag / Purse', 'Keys', 'Clothing / Accessory',
+                'Laboratory Equipment', 'Sports Gear', 'Other Items'
+            ],
+            
+            init() {
+                if (window.lucide) {
+                    setTimeout(() => lucide.createIcons(), 50);
+                }
+            },
+            
+            get filteredLocations() {
+                if (!this.locationSearch) return this.campusLocations;
+                return this.campusLocations.filter(loc => loc.toLowerCase().includes(this.locationSearch.toLowerCase()));
+            },
+
+            get filteredCategories() {
+                if (!this.categorySearch) return this.categories;
+                return this.categories.filter(cat => cat.toLowerCase().includes(this.categorySearch.toLowerCase()));
+            },
+
+            selectLocation(loc) {
+                this.selectedLocation = loc;
+                this.locationSearch = '';
+            },
+
+            validateAndNext() {
+                const form = document.getElementById('report-form');
+                if (this.step === 1) {
+                    // Auto-sync search inputs if they didn't explicitly click
+                    if (!this.selectedCategory && this.categorySearch) this.selectedCategory = this.categorySearch;
+                    if (this.locationTab === 'campus' && !this.selectedLocation && this.locationSearch) this.selectedLocation = this.locationSearch;
+
+                    const name = form.querySelector('[name=name]').value;
+                    const desc = form.querySelector('[name=description]').value;
+                    const date = form.querySelector('[name=discovery_date]').value;
+
+                    if (!name || !desc || !this.selectedCategory) {
+                        if (window.showToast) window.showToast('Please provide Name, Description, and Category.', 'error');
+                        return;
+                    }
+                    if (!this.selectedLocation) {
+                        if (window.showToast) window.showToast('Please specify where this item was lost/found.', 'error');
+                        return;
+                    }
+                    if (!date) {
+                        if (window.showToast) window.showToast('Please provide the estimated date and time.', 'error');
+                        return;
+                    }
+                }
+                this.step++;
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            },
+
+            async getGPS() {
+                if (!navigator.geolocation) {
+                    window.showToast('Geolocation is not supported.', 'error');
+                    return;
+                }
+                this.gpsLoading = true;
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        this.selectedLocation = data.display_name || `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    } catch (e) {
+                        this.selectedLocation = `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    }
+                    this.gpsLoading = false;
+                }, (err) => {
+                    window.showToast('GPS Sync Failure: Unable to acquire coordinates.', 'error');
+                    this.locationTab = 'custom';
+                    this.gpsLoading = false;
+                }, { timeout: 10000 });
+            },
+
+            async handleFormSubmit() {
+                this.submitting = true;
+                
+                const form = document.querySelector('#report-form');
+                const formData = new FormData(form);
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            window.location.href = `/item/${data.pk}/`;
+                        } else {
+                            window.showToast('Validation failed. Please check your entries.', 'error');
+                            this.submitting = false;
+                        }
+                    } else {
+                        // The server returns 400 with HTML of the form again or a JSON error
+                        window.showToast('Validation Failed. Ensure all required fields are filled correctly.', 'error');
+                        this.submitting = false;
+                    }
+                } catch (e) {
+                    window.showToast('Network error: Submission could not reach the server.', 'error');
+                    this.submitting = false;
+                }
+            }
+        }
+    }
+</script>
 {% endblock %}

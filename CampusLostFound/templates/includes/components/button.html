@@ -1,0 +1,82 @@
+{% comment %} 
+  Systemic Intelligence: Reusable Action Component
+  Standardized for the DMMMSU design system.
+{% endcomment %}
+
+{% spaceless %}
+<{% if href %}a{% else %}button{% endif %}
+  {% if href %}href="{{ href }}"{% else %}type="{{ btn_type|default:'button' }}"{% endif %}
+  {% if btn_form %}form="{{ btn_form }}"{% endif %}
+  {% if id %}id="{{ id }}"{% endif %}
+  {% if disabled %}disabled{% endif %}
+  {% if x_bind_disabled %}:disabled="{{ x_bind_disabled }}"{% endif %}
+  
+  class="
+    inline-flex items-center justify-center gap-3
+    px-8 py-4
+    rounded-[1.5rem]
+    font-black uppercase tracking-widest text-[10px]
+    transition-all duration-500 active:scale-95
+    focus:outline-none focus:ring-4
+    disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale
+    shadow-sm hover:shadow-premium
+    
+    {% if type == 'secondary' %}
+      bg-secondary text-white
+      hover:bg-secondary/90
+      focus:ring-secondary/10
+    {% elif type == 'danger' %}
+      bg-danger text-white
+      hover:bg-danger/90
+      focus:ring-danger/10
+    {% elif type == 'outline' %}
+      border-2 border-border bg-transparent text-text-light
+      hover:bg-slate-50 hover:text-text-main
+      focus:ring-slate-100
+    {% elif type == 'outline-primary' %}
+      border-2 border-primary/20 bg-transparent text-primary
+      hover:bg-primary/5 hover:border-primary/40
+      focus:ring-primary/10
+    {% elif type == 'ghost' %}
+      bg-transparent text-text-light
+      hover:bg-slate-50 hover:text-text-main
+      focus:ring-slate-100
+    {% else %}
+      {% comment %} default primary {% endcomment %}
+      bg-primary text-white
+      hover:bg-primary/90
+      focus:ring-primary/10
+    {% endif %}
+    
+    {{ class }}
+  "
+  {% if onclick %}onclick="{{ onclick }}"{% endif %}
+>
+  {% if icon_class and icon_position != 'right' %}
+    <i data-lucide="{{ icon_class }}" class="w-4 h-4 transition-transform group-hover:scale-110" aria-hidden="true" 
+       {% if x_bind_loading %}x-show="!({{ x_bind_loading }})"{% elif loading %}style="display: none;"{% endif %}></i>
+  {% endif %}
+  
+  {% if x_bind_loading %}
+    <div x-show="{{ x_bind_loading }}" x-cloak class="flex gap-1.5 Items-center">
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
+    </div>
+    <span x-show="!({{ x_bind_loading }})">{{ label }}</span>
+  {% elif loading %}
+    <div class="flex gap-1.5 items-center">
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
+      <span class="inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
+    </div>
+  {% else %}
+    <span class="relative z-10">{{ label }}</span>
+  {% endif %}
+  
+  {% if icon_class and icon_position == 'right' %}
+    <i data-lucide="{{ icon_class }}" class="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true"
+       {% if x_bind_loading %}x-show="!({{ x_bind_loading }})"{% elif loading %}style="display: none;"{% endif %}></i>
+  {% endif %}
+</{% if href %}a{% else %}button{% endif %}>
+{% endspaceless %}

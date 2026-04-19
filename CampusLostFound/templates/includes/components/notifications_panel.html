@@ -1,0 +1,111 @@
+{% comment %}
+  Consolidated Notifications Panel
+  Standardized with Unified Design System
+{% endcomment %}
+
+{% spaceless %}
+<div x-data="{ notificationsOpen: false }" class="relative" style="z-index: 100;">
+  
+  <!-- Notification Bell Button -->
+  <button
+    @click="notificationsOpen = !notificationsOpen"
+    class="btn btn-ghost"
+    style="padding: 0.5rem; border: 1px solid var(--border); width: 44px; height: 44px; position: relative;"
+    aria-label="Notifications"
+  >
+    <i data-lucide="bell" style="width: 20px;"></i>
+    
+    <!-- Badge for unread count -->
+    {% if unread_count > 0 %}
+      <span style="position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; background: var(--secondary); color: var(--white); border-radius: 9px; font-size: 0.65rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--white); box-shadow: var(--shadow-sm);">
+        {{ unread_count }}
+      </span>
+    {% endif %}
+  </button>
+
+  <!-- Notifications Dropdown Panel -->
+  <div
+    x-show="notificationsOpen"
+    @click.outside="notificationsOpen = false"
+    style="display:none; position: absolute; top: 110%; right: 0; width: 350px; z-index: 101; border-radius: var(--radius-lg); background: var(--white); border: 1px solid var(--border); box-shadow: var(--shadow-lg); overflow: hidden;"
+  >
+    <!-- Header -->
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--bg-main); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 class="section-title" style="margin-bottom: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Community Feed</h3>
+        <p style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Activity Stream</p>
+      </div>
+      {% if unread_count > 0 %}
+        <form action="{% url 'items:mark_all_read' %}" method="post">
+          {% csrf_token %}
+          <button type="submit" style="background: none; border: none; font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; cursor: pointer;">
+            Clear All
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <!-- Notifications List -->
+    <div style="max-height: 400px; overflow-y: auto;" class="custom-scrollbar">
+      {% if notifications %}
+        {% for notification in notifications|slice:':10' %}
+          <div style="display: block; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); transition: background 0.2s; position: relative; {% if not notification.is_read %}background: var(--bg-main);{% endif %}"
+               class="group hover:bg-slate-50 transition-colors">
+            
+            <div class="flex items-start gap-4">
+              <!-- Icon & Priority -->
+              <div style="position: relative;">
+                <div style="width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; shrink: 0; 
+                    {% if notification.category == 'admin' %}background: #fee2e2; color: #ef4444;
+                    {% elif notification.category == 'activity' %}background: var(--primary-light); color: var(--primary);
+                    {% else %}background: var(--bg-main); color: var(--text-muted);{% endif %}">
+                    <i data-lucide="{% if notification.category == 'admin' %}shield-alert{% elif notification.category == 'activity' %}user-check{% else %}bell{% endif %}" style="width: 18px;"></i>
+                </div>
+                {% if notification.priority == 'high' and not notification.is_read %}
+                  <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                {% endif %}
+              </div>
+
+              <!-- Content -->
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.15rem;">
+                  <p style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px;">
+                    {{ notification.get_category_display }}
+                  </p>
+                  <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    {{ notification.created_at|timesince }}
+                  </span>
+                </div>
+                <h4 style="font-size: 0.85rem; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">{{ notification.title }}</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                  {{ notification.message }}
+                </p>
+                
+                {% if notification.related_item %}
+                  <a href="{% url 'items:item_detail' notification.related_item.id %}" style="display: inline-block; margin-top: 0.5rem; font-size: 0.7rem; font-weight: 900; color: var(--primary); text-transform: uppercase; text-decoration: none;">View Item</a>
+                {% endif %}
+              </div>
+
+              <!-- Unread Indicator -->
+              {% if not notification.is_read %}
+                <div style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; margin-top: 0.4rem; shrink: 0;"></div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+
+        <div style="padding: 1.25rem; text-align: center; background: var(--bg-main); border-top: 1px solid var(--border);">
+          <a href="{% url 'items:notifications_list' %}" style="font-size: 0.75rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none;">View All Alerts</a>
+        </div>
+      {% else %}
+        <div style="padding: 3rem 1.5rem; text-align: center;">
+          <div style="width: 64px; height: 64px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; opacity: 0.5;">
+            <i data-lucide="bell-off" style="width: 32px; color: var(--text-muted);"></i>
+          </div>
+          <p style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Registry is quiet</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endspaceless %}

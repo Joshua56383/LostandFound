@@ -1,0 +1,147 @@
+<div x-data="chatPanel({
+    recipientId: {{ recipient.id|default:'null' }},
+    itemId: {{ item.id|default:'null' }},
+    currentUserId: {{ request.user.id }}
+})" @open-chat.window="open = true" class="flex flex-col h-full bg-white rounded-[2rem] border border-gray-100 shadow-xl overflow-hidden">
+    <!-- Chat Header -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0" style="background: var(--bg-main);">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm">
+                {{ recipient.username|slice:":1"|upper }}
+            </div>
+            <div>
+                <p class="text-xs font-black text-gray-900 leading-tight">@{{ recipient.username }}</p>
+                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Item Inquiry</p>
+            </div>
+        </div>
+        <button @click="$dispatch('close-chat')" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-400 transition-all">
+            <i data-lucide="minimize-2" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- Message Area -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-white/50" x-init="$el.scrollTop = $el.scrollHeight">
+        <!-- Empty State -->
+        <template x-if="messages.length === 0">
+            <div class="h-full flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-gray-100 rounded-[2rem] m-2">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-200" style="background: var(--bg-main);">
+                    <i data-lucide="message-circle" class="w-8 h-8"></i>
+                </div>
+                <h4 class="text-xs font-black text-gray-900 uppercase tracking-widest mb-2">No Messages Yet</h4>
+                <p class="text-[10px] font-bold text-gray-400 leading-relaxed">Safety First: Keep your conversations within the registry for a secure turnover.</p>
+            </div>
+        </template>
+
+        <template x-for="msg in messages" :key="msg.id">
+            <div :class="msg.sender == currentUserId ? 'flex flex-col items-end' : 'flex flex-col items-start'">
+                <div :class="msg.sender == currentUserId ? 'bg-primary text-white rounded-[1.25rem] rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-[1.25rem] rounded-bl-none'"
+                    class="max-w-[85%] px-4 py-3 text-sm font-medium shadow-sm"
+                    :style="msg.sender == currentUserId ? 'background: var(--primary);' : 'background: var(--bg-main);'">
+                    <p x-text="msg.content"></p>
+                </div>
+                <span class="text-[8px] font-black text-gray-300 uppercase mt-1 px-1" x-text="msg.time"></span>
+            </div>
+        </template>
+        <div id="panel-anchor"></div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-4 bg-white border-t border-gray-100 shrink-0">
+        <form @submit.prevent="sendMessage()" class="flex items-center gap-2">
+            <input type="text" x-model="newMessage" placeholder="Type message..." 
+                class="input-field" style="padding: 0.6rem 1rem; font-size: 0.85rem;">
+            <button type="submit" :disabled="!newMessage.trim() || sending"
+                class="btn btn-primary" style="padding: 0.6rem; width: 42px; height: 42px; shrink-0;">
+                <i data-lucide="send" class="w-4 h-4" x-show="!sending"></i>
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin" x-show="sending"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function chatPanel(config) {
+    return {
+        open: false,
+        messages: [],
+        newMessage: '',
+        sending: false,
+        ...config,
+        init() {
+            this.loadMessages();
+            // Optional: Poll for new messages every 10 seconds
+            setInterval(() => this.loadMessages(), 10000);
+        },
+        async loadMessages() {
+            if (!this.recipientId) return;
+            try {
+                const url = `{% url 'items:conversation' 0 %}`.replace('0', this.recipientId);
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                if (data.messages) {
+                    const oldLength = this.messages.length;
+                    this.messages = data.messages;
+                    if (this.messages.length > oldLength) {
+                        this.$nextTick(() => {
+                            const el = document.getElementById('chat-messages');
+                            el.scrollTop = el.scrollHeight;
+                        });
+                    }
+                }
+            } catch (e) {}
+        },
+        async sendMessage() {
+            if (!this.newMessage.trim() || this.sending) return;
+            this.sending = true;
+            
+            const formData = new FormData();
+            formData.append('recipient_id', this.recipientId);
+            formData.append('content', this.newMessage);
+            if (this.itemId) formData.append('item_id', this.itemId);
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            try {
+                const response = await fetch('{% url "items:send_message_api" %}', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    this.messages.push({
+                        id: Date.now(),
+                        sender: this.currentUserId,
+                        content: this.newMessage,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    });
+                    this.newMessage = '';
+                    this.$nextTick(() => {
+                        const el = document.getElementById('chat-messages');
+                        el.scrollTop = el.scrollHeight;
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.sending = false;
+            }
+        }
+    }
+}
+</script>

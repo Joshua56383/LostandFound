@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Handover Pass - Recovery Hub{% endblock %}
+
+{% block extra_head %}
+<!-- QR Generation Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+    .pass-card {
+        background: radial-gradient(circle at top right, #5842e5, #4632c2);
+        border-radius: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .pass-card::before {
+        content: '';
+        position: absolute;
+        top: -10%; right: -10%;
+        width: 300px; height: 300px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+    }
+    .qr-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 2rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .qr-container img {
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-12 px-6">
+    <div class="pass-card p-10 text-white shadow-2xl">
+        <header class="text-center mb-10">
+            <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md border border-white/20">
+                <i data-lucide="shield-check" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-black uppercase tracking-tight">Verified Pass</h1>
+            <p class="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Official Handover Sync</p>
+        </header>
+
+        <!-- QR Code Section -->
+        <div class="qr-container mb-10">
+            <div id="qrcode" class="flex justify-center"></div>
+            <p class="text-center text-secondary font-black text-[10px] uppercase tracking-widest mt-6">Scan to Resolve</p>
+        </div>
+
+        <!-- Info Section -->
+        <div class="space-y-6">
+            <div class="flex flex-col gap-1">
+                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">Authorized Item</span>
+                <p class="text-lg font-black truncate">{{ claim.item.name }}</p>
+            </div>
+            
+            <div class="flex justify-between items-center bg-white/10 p-4 rounded-2xl border border-white/10">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">Claimant</span>
+                    <p class="text-sm font-bold">@{{ claim.claimer.username }}</p>
+                </div>
+                <div class="flex flex-col gap-1 text-right">
+                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">Pass ID</span>
+                    <p class="text-[10px] font-mono opacity-80 uppercase">{{ claim.id }}</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center">
+            <p class="text-[9px] font-bold text-white/50 leading-relaxed">
+                Present this QR code to the Campus Security Office staff to finalize the recovery process.
+            </p>
+        </footer>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-10 px-6 text-center">
+        <button onclick="window.print()" class="text-slate-400 hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto text-[10px] font-black uppercase tracking-widest">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            Print / Save as PDF
+        </button>
+    </div>
+</div>
+
+<script>
+    // Initialize QR Code
+    new QRCode(document.getElementById("qrcode"), {
+        text: "{{ claim.verification_token }}",
+        width: 200,
+        height: 200,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+</script>
+{% endblock %}

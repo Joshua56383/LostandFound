@@ -1,0 +1,58 @@
+{% comment %}
+    Standardized Status Badge Component
+    Inputs: item (Item object), status (String, optional), label (String, optional), dot (Boolean, optional), class (String, optional)
+{% endcomment %}
+
+<div class="flex items-center gap-2 {{ class }}">
+    {% if item %}
+        <!-- Primary Lifecycle Badge (From Item) -->
+        <span class="badge shadow-sm 
+            {% if item.lifecycle_status == 'resolved' %}badge-success
+            {% elif item.lifecycle_status == 'claimed' %}badge-primary
+            {% elif item.lifecycle_status == 'archived' %}badge-neutral
+            {% elif item.verification_status == 'pending' %}badge-warning
+            {% elif item.verification_status == 'rejected' %}badge-danger
+            {% else %}badge-info{% endif %}">
+            
+            {% if dot %}
+                <span class="badge-dot 
+                    {% if item.lifecycle_status == 'resolved' %}bg-success
+                    {% elif item.lifecycle_status == 'claimed' %}bg-primary
+                    {% elif item.verification_status == 'pending' %}bg-warning
+                    {% elif item.verification_status == 'rejected' %}bg-danger
+                    {% else %}bg-info{% endif %}"></span>
+            {% endif %}
+
+            {% if item.lifecycle_status == 'active' %}
+                {{ item.get_verification_status_display|upper }}
+            {% else %}
+                {{ item.get_lifecycle_status_display|upper }}
+            {% endif %}
+        </span>
+
+        <!-- Secondary Report Type Badge (From Item) -->
+        <span class="badge shadow-sm {% if item.report_type == 'lost' %}badge-danger{% else %}badge-success{% endif %}">
+            {{ item.get_report_type_display|default:item.report_type|upper }}
+        </span>
+    {% else %}
+        <!-- Direct Input Badge (Dynamic Mapping) -->
+        <span class="badge shadow-sm 
+            {% if status == 'active' or status == 'approved' %}badge-primary
+            {% elif status == 'pending' %}badge-warning
+            {% elif status == 'rejected' or status == 'lost' %}badge-danger
+            {% elif status == 'resolved' or status == 'found' %}badge-success
+            {% else %}badge-info{% endif %}">
+            
+            {% if dot %}
+                <span class="badge-dot 
+                    {% if status == 'active' or status == 'approved' %}bg-primary
+                    {% elif status == 'pending' %}bg-accent
+                    {% elif status == 'rejected' or status == 'lost' %}bg-danger
+                    {% elif status == 'resolved' or status == 'found' %}bg-success
+                    {% else %}bg-gray-400{% endif %}"></span>
+            {% endif %}
+            
+            {{ label|default:status|upper }}
+        </span>
+    {% endif %}
+</div>

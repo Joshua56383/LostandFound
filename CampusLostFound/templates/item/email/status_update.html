@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            color: #ffffff;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .item-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4ca1af;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .item-details p {
+            margin: 5px 0;
+        }
+        .item-label {
+            font-weight: bold;
+            color: #555;
+            width: 100px;
+            display: inline-block;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #4ca1af;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background-color: #357a84;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Campus Lost & Found</h1>
+        </div>
+        <div class="content">
+            <p>Hello <strong>{{ user.username }}</strong>,</p>
+            
+            <p>There is an update regarding your reported item.</p>
+            
+            <div class="status-badge">
+                {{ status }}
+            </div>
+            
+            <p>{{ message }}</p>
+            
+            <div class="item-details">
+                <p><span class="item-label">Item:</span> {{ item.name }}</p>
+                <p><span class="item-label">Location:</span> {{ item.location }}</p>
+                <p><span class="item-label">Date:</span> {{ item.date_reported|date:"F d, Y" }}</p>
+            </div>
+            
+            <p>You can check the full details and history in your dashboard.</p>
+            
+            <div style="text-align: center;">
+                <a href="http://{{ site_url|default:'localhost:8000' }}/dashboard/" class="button">View Dashboard</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 Campus Lost & Found System</p>
+            <p>This is an automated notification, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

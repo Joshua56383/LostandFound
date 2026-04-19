@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.contrib.auth import views as auth_views
-from . import views
+from items import views as item_views
 
 
 urlpatterns = [
@@ -32,28 +32,36 @@ urlpatterns = [
         template_name='user/login.html'
     ), name='login'),
     path('accounts/password_reset/', auth_views.PasswordResetView.as_view(
-        template_name='user/login.html',
-        email_template_name='user/password_reset_email.html',
+        template_name='user/password_reset_form.html',
+        email_template_name='user/password_reset_email.txt',
+        html_email_template_name='user/password_reset_email.html',
         subject_template_name='user/password_reset_subject.txt',
-        success_url='/accounts/login/?reset_sent=1'
+        success_url='/accounts/password_reset/done/'
     ), name='password_reset'),
     path('accounts/password_reset/done/', auth_views.PasswordResetDoneView.as_view(
-        template_name='user/login.html'
+        template_name='user/password_reset_done.html'
     ), name='password_reset_done'),
     path('accounts/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-        template_name='user/login.html',
-        success_url='/accounts/login/?reset_complete=1'
+        template_name='user/password_reset_confirm.html',
+        success_url='/accounts/reset/done/'
     ), name='password_reset_confirm'),
     path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(
-        template_name='user/login.html'
+        template_name='user/password_reset_complete.html'
     ), name='password_reset_complete'),
     
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
-    path('signup/', views.signup, name='signup'),
+    path('signup/', item_views.signup, name='signup'),
 ]
+
+handler404 = 'items.views.error_404_view'
+handler500 = 'items.views.error_500_view'
 
 if settings.DEBUG:
     from django.conf.urls.static import static
+    from django.views.static import serve
+    import os
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += [
+        path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]
 

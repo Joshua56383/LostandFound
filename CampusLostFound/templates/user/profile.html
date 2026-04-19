@@ -1,153 +1,166 @@
-{% extends 'base.html' %}
+{% extends base_template %}
 {% load static %}
 
-{% block title %}My Profile - Retrace{% endblock %}
+{% block title %}Account Settings - DMMMSU Recovery Hub{% endblock %}
 
-{% block extra_head %}
-<!-- Custom Styles -->
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Account</span>
 {% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    <!-- Profile Hero Card -->
-    <div class="card-modern" style="margin-bottom: 32px;">
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
-            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
+<header class="flex flex-col sm:flex-row justify-between items-start gap-8 mb-12">
+    <div>
+        <h1 class="page-title">Account Overview</h1>
+        <p class="page-subtitle">Manage your identity and institutional credentials.</p>
+    </div>
+    <div class="flex gap-4">
+        {% url 'items:edit_profile' as edit_profile_url %}
+        {% include 'includes/components/btn.html' with label="Account Settings" icon="settings" variant="secondary" url=edit_profile_url type="link" %}
+    </div>
+</header>
+
+<div class="flex flex-col gap-12">
+    <!-- Profile Hero -->
+    <section class="card card-premium shadow-premium">
+        <div class="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
+            
+            <!-- Avatar & Trust Badge -->
+            <div class="relative">
                 {% if user.userprofile.avatar %}
-                <div style="margin-bottom: 16px; position: relative;">
-                    <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}"
-                        style="width: 80px; height: 80px; border-radius: 16px; object-fit: cover; border: 3px solid var(--primary);">
-                </div>
+                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="w-36 h-36 rounded-xl object-cover shadow-lg border-4 border-white transition-transform hover:scale-105 duration-300">
                 {% else %}
-                <div class="avatar-ring" style="margin-bottom: 16px;">
-                    <div class="avatar-inner">
-                        {{ user.username|make_list|first|upper }}
-                    </div>
+                <div class="w-36 h-36 rounded-xl bg-primary text-white flex items-center justify-center text-5xl font-black shadow-lg">
+                    {{ user.username|slice:":1"|upper }}
                 </div>
                 {% endif %}
-
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <h1 style="font-size: 1.5rem; font-weight: 700;">{{ user.username }}</h1>
-                    {% if user.userprofile.student_staff_id %}
-                    <span class="badge badge-green">
-                        <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
-                        Verified {{ user.userprofile.get_user_type_display }}
-                    </span>
-                    {% else %}
-                    <span class="badge badge-orange">
-                        <i data-lucide="circle-alert" style="width: 12px; height: 12px;"></i>
-                        Unverified
-                    </span>
-                    {% endif %}
+                <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-secondary text-white rounded-lg border-4 border-white shadow-lg flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
                 </div>
-                <p
-                    style="color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 6px; justify-content: center;">
-                    <i data-lucide="mail" style="width: 14px; height: 14px;"></i>
+            </div>
+
+            <!-- Profile Info -->
+            <div class="flex-1 text-center md:text-left">
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-5 mb-6">
+                    <h2 class="text-4xl font-black text-text-main tracking-tighter uppercase">{{ user.username }}</h2>
+                    {% include 'includes/components/status_badge.html' with status="active" label=user.userprofile.get_user_type_display|default:"Student" dot=true class="!shadow-none" %}
+                </div>
+                
+                <p class="text-xs font-bold text-text-light uppercase tracking-widest flex items-center justify-center md:justify-start gap-3 mb-8">
+                    <i data-lucide="mail" class="w-4 h-4 text-primary"></i>
                     {{ user.email }}
                 </p>
-                {% if user.userprofile.student_staff_id %}
-                <p
-                    style="color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;">
-                    ID: {{ user.userprofile.student_staff_id }}
-                </p>
-                {% endif %}
-                <p style="color: var(--muted); font-size: 12px; margin-top: 4px;">
-                    Member since {{ user.date_joined|date:"F Y" }}
-                </p>
-            </div>
 
-            <div style="display: flex; gap: 12px; width: 100%; justify-content: center;">
-                <a href="{% url 'items:edit_profile' %}" class="btn btn-primary" style="flex: 1; max-width: 160px;">
-                    <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
-                    Edit Profile
-                </a>
-                <form action="{% url 'logout' %}" method="post" style="flex: 1; max-width: 160px;">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-btn"
-                        style="width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
-                        Logout
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Stats Bar -->
-        <div
-            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border);">
-            <div style="text-align: center;">
-                <div style="font-size: 1.25rem; font-weight: 700;">{{ user_items.count }}</div>
-                <div
-                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
-                    Total Posts</div>
-            </div>
-            <div
-                style="text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
-                <div style="font-size: 1.25rem; font-weight: 700;">{{ user_items_resolved_count|default:"0" }}</div>
-                <div
-                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
-                    Returned</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 1.25rem; font-weight: 700;">{{ user.userprofile.trust_score }}%</div>
-                <div
-                    style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600;">
-                    Trust Score</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Listings Section -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
-        <h2 style="font-size: 1.125rem; font-weight: 700;">My Listings</h2>
-        <a href="{% url 'items:add_item' %}" class="btn btn-light" style="font-size: 13px;">
-            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            New Listing
-        </a>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-        {% for item in user_items %}
-        <a href="{% url 'items:item_detail' item.pk %}" class="listing-item">
-            {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="listing-img">
-            {% else %}
-            <div class="listing-img"
-                style="display: flex; align-items: center; justify-content: center; color: var(--muted);">
-                <i data-lucide="package" style="width: 32px; height: 32px;"></i>
-            </div>
-            {% endif %}
-
-            <div class="listing-content">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                    <span
-                        class="badge {% if item.status == 'lost' %}badge-orange{% elif item.status == 'found' %}badge-green{% else %}badge-blue{% endif %}">
-                        {{ item.status|title }}
-                    </span>
-                    <span style="color: var(--muted); font-size: 12px;">â€¢</span>
-                    <span style="color: var(--muted); font-size: 12px;">{{ item.date_reported|date:"M d, Y" }}</span>
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-8 text-[10px] font-black uppercase tracking-widest text-text-light opacity-50">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-secondary rounded-full"></span>
+                        <span>Member Since {{ user.date_joined|date:"M Y" }}</span>
+                    </div>
+                    {% if user.userprofile.student_staff_id %}
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-success rounded-full"></span>
+                        <span>Institutional ID: {{ user.userprofile.student_staff_id }}</span>
+                    </div>
+                    {% endif %}
                 </div>
-                <h3 class="listing-title">{{ item.name }}</h3>
-                <p style="color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 4px;">
-                    <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
-                    {{ item.location }}
-                </p>
             </div>
 
-            <i data-lucide="chevron-right" style="color: var(--border); width: 20px; height: 20px;"></i>
-        </a>
-        {% empty %}
-        <div
-            style="text-align: center; padding: 48px; border: 2px dashed var(--border); border-radius: var(--radius); color: var(--muted);">
-            <div
-                style="background: var(--bg); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                <i data-lucide="package" style="width: 24px; height: 24px;"></i>
+            <!-- Trust Meter -->
+            <div class="p-6 bg-gray-50 border border-border rounded-xl min-w-[160px] flex flex-col items-center gap-4">
+                <span class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-60">Trust Integrity</span>
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-20 h-20 -rotate-90">
+                        <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent" class="text-gray-200"></circle>
+                        <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="transparent" 
+                                class="text-primary" 
+                                style="stroke-dasharray: 226; stroke-dashoffset: calc(226 - (226 * {{ user.userprofile.trust_score|default:100 }}) / 100); transition: all 1.5s ease-in-out;"></circle>
+                    </svg>
+                    <span class="absolute text-2xl font-black text-text-main">{{ user.userprofile.trust_score|default:100 }}</span>
+                </div>
             </div>
-            <h3 style="font-weight: 600; color: var(--text);">No items found</h3>
-            <p style="font-size: 14px;">You haven't reported any items yet.</p>
         </div>
-        {% endfor %}
+    </section>
+
+    <!-- Impact Stats -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="card card-stat">
+            <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                <i data-lucide="package" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <p class="text-4xl font-black text-text-main tracking-tighter leading-none mb-1">{{ user_items.count }}</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-50">Reports Filed</p>
+            </div>
+        </div>
+
+        <div class="card card-stat">
+            <div class="w-16 h-16 bg-success/10 rounded-xl flex items-center justify-center text-success">
+                <i data-lucide="check-circle" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <p class="text-4xl font-black text-text-main tracking-tighter leading-none mb-1">{{ user_items_resolved_count|default:"0" }}</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-50">Cases Resolved</p>
+            </div>
+        </div>
+
+        <div class="card card-stat">
+            <div class="w-16 h-16 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
+                <i data-lucide="shield-alert" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <p class="text-4xl font-black text-text-main tracking-tighter leading-none mb-1">{{ pending_claims.count|default:"0" }}</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-text-light opacity-50">Pending Claims</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="flex flex-col gap-12 mt-4">
+        {% if pending_claims %}
+        <section>
+            <div class="flex items-center gap-4 mb-8">
+                <h3 class="section-title mb-0">Incoming Requests</h3>
+            </div>
+            
+            <div class="flex flex-col gap-5">
+                {% for claim in pending_claims %}
+                <div class="card flex flex-col md:flex-row items-center gap-8 !p-8">
+                    <div class="flex-1 w-full">
+                        <div class="flex items-center gap-4 mb-4">
+                            {% include 'includes/components/status_badge.html' with status="pending" label=claim.item.name dot=true class="!shadow-none" %}
+                            <span class="text-[10px] font-black text-text-light uppercase tracking-widest opacity-40">Claimed by @{{ claim.claimer.username }}</span>
+                        </div>
+                        <div class="p-6 bg-gray-50 border border-border rounded-xl">
+                            <p class="text-sm font-bold text-text-muted leading-relaxed italic">"{{ claim.message }}"</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 w-full md:w-auto">
+                        {% include 'includes/components/btn.html' with label="Accept Claim" icon="check" variant="primary" class="w-full" url="items:approve_claim" attrs=claim.id %}
+                        {% include 'includes/components/btn.html' with label="Decline" icon="x" variant="danger" class="w-full" url="items:reject_claim" attrs=claim.id %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 mb-8">
+                <h3 class="section-title mb-0">Recent Activity</h3>
+                <a href="{% url 'items:my_activity' %}" class="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">View Full Ledger</a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for item in user_items|slice:":3" %}
+                    {% include 'item/item_card.html' with item=item %}
+                {% empty %}
+                <div class="col-span-full p-20 text-center border-2 border-dashed border-border rounded-xl bg-gray-50 opacity-40">
+                    <i data-lucide="package-search" class="w-16 h-16 mx-auto mb-6 text-text-light/20"></i>
+                    <h3 class="font-black text-xl uppercase tracking-tighter mb-2">Ledger Empty</h3>
+                    <p class="text-[10px] font-black uppercase tracking-widest">No recent records detected.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

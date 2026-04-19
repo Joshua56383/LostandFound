@@ -1,167 +1,246 @@
-{% extends 'base.html' %}
+{% extends base_template|default:'base.html' %}
 {% load static %}
 
-{% block title %}{{ item.name }} - Retrace{% endblock %}
+{% block title %}{{ item.name }}{% endblock %}
 
-{% block extra_head %}
-<!-- Custom Styles -->
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% block breadcrumbs %}
+{% if base_template == 'base.html' %}
+<span class="breadcrumb-separator">/</span>
+<a href="{% url 'items:item_list' %}" class="hover:text-primary transition-colors">Browse</a>
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Item Details</span>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="profile-container" style="max-width: 800px;">
-    <!-- Brand / Back Navigation -->
-    <div class="mb-6">
-        <a href="{% url 'items:item_list' %}" class="btn btn-light" style="padding: 6px 14px; font-size: 13px;">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-            Back to Browse
-        </a>
-    </div>
-
-    <!-- Main Detail Card -->
-    <div class="card-modern" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
-        <!-- Hero Image -->
-        {% if item.image %}
-        <div style="width: 100%; height: 400px; background: #f1f5f9; position: relative;">
-            <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
-            <div style="position: absolute; top: 16px; left: 16px;">
-                <span class="badge {% if item.status == 'lost' %}badge-orange{% else %}badge-green{% endif %}"
-                    style="padding: 6px 12px; font-size: 12px; box-shadow: var(--shadow-md);">
-                    {{ item.get_status_display }}
-                </span>
+<div class="{% if base_template == 'base.html' %}max-w-5xl mx-auto py-12 px-6{% endif %}">
+    
+    <!-- Restoration Banner for Deleted Items -->
+    {% if item.is_deleted %}
+    <div class="mb-10 bg-red-50 border-2 border-red-100 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+        <div class="flex items-center gap-6">
+            <div class="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 shadow-inner">
+                <i data-lucide="trash-2" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-red-950 uppercase tracking-tight mb-1">Hidden Item</h3>
+                <p class="text-xs font-bold text-red-700/60 uppercase tracking-widest leading-relaxed">This report is hidden from the public feed. Restore it to make it visible again.</p>
             </div>
         </div>
-        {% else %}
-        <div
-            style="width: 100%; height: 200px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: var(--text-muted); border-bottom: 1px solid var(--border);">
-            <div class="text-center">
-                <i data-lucide="image" style="width: 48px; height: 48px; margin-bottom: 8px;"></i>
-                <p style="font-size: 14px;">No image available</p>
-            </div>
+        {% include 'includes/components/btn.html' with label="Restore Item" icon="refresh-cw" variant="danger" size="sm" url="items:restore_item" attrs=item.id %}
+    </div>
+    {% endif %}
+
+    <div class="item-detail-modal">
+        <!-- Close Button -->
+        <button @click="{% if base_template == 'base.html' %}window.history.back(){% else %}closeModal(){% endif %}" 
+                class="item-detail-close">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        {% if item.is_locked %}
+        <div class="absolute top-0 left-0 w-full bg-slate-900/90 backdrop-blur text-white py-3 px-6 z-40 flex items-center justify-center gap-3">
+            <i data-lucide="lock" class="w-4 h-4 text-secondary"></i>
+            <span class="text-[10px] font-black uppercase tracking-widest">Locked for review</span>
         </div>
         {% endif %}
 
-        <div style="padding: 32px;">
-            <div class="flex-between mb-4">
-                <h1 style="font-size: 2.25rem; letter-spacing: -0.02em;">{{ item.name }}</h1>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div class="badge badge-blue" style="border-radius: 6px;">{{ item.category|default:"General" }}</div>
-                    {% if item.status != 'claimed' and request.user != item.owner %}
-                    <a href="{% url 'items:submit_claim' item.id %}" class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;">
-                        <i data-lucide="hand-helping" style="width: 16px; height: 16px;"></i>
-                        Claim Item
-                    </a>
-                    {% endif %}
+        <!-- Left Side: Visual Assets -->
+        <div class="item-detail-visual">
+            {% if item.image %}
+                <img src="{{ item.image.url }}" class="item-detail-img" alt="{{ item.name }}">
+            {% else %}
+                <div class="flex flex-col items-center justify-center opacity-20 text-white">
+                    <i data-lucide="image" class="w-20 h-20 mb-4"></i>
+                    <p class="text-[10px] font-black uppercase tracking-widest">No photo provided</p>
                 </div>
+            {% endif %}
+
+            <!-- Item Status Badge -->
+            <div class="item-status-pill {% if item.report_type == 'lost' %}lost{% else %}found{% endif %}">
+                <i data-lucide="{% if item.report_type == 'lost' %}alert-circle{% else %}check-circle{% endif %}" class="w-4 h-4"></i>
+                <span>{{ item.report_type|add:" Item"|capfirst }}</span>
             </div>
+        </div>
 
-            <p style="font-size: 1.125rem; color: var(--text-muted); margin-bottom: 32px; line-height: 1.7;">
-                {{ item.description }}
-            </p>
-
-            <!-- Metadata Grid -->
-            <div
-                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
-                <div>
-                    <div class="form-label" style="text-transform: uppercase;">Location</div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-                        <i data-lucide="map-pin" style="width: 18px; height: 18px; color: var(--primary);"></i>
-                        {{ item.location }}
+        <!-- Right Side: Intelligence & Actions -->
+        <div class="item-detail-info">
+            
+            <header class="item-detail-header">
+                <h1>{{ item.name }}</h1>
+                <div class="item-detail-tags">
+                    <div class="detail-tag tag-category">
+                        <i data-lucide="tag" class="w-4 h-4"></i>
+                        <span>{{ item.category|default:"General" }}</span>
+                    </div>
+                    <div class="detail-tag tag-date">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>{{ item.date_reported|date:"M d, Y" }}</span>
                     </div>
                 </div>
-                <div>
-                    <div class="form-label" style="text-transform: uppercase;">Reported Date</div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-                        <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--primary);"></i>
-                        {{ item.date_reported|date:"F d, Y" }}
+            </header>
+            
+            {% if item.is_money %}
+                <!-- Money Security Section -->
+                <div class="money-security-banner">
+                    <div class="detail-icon-circle icon-purple !w-12 !h-12 !rounded-xl">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="text-[9px] font-black text-primary uppercase tracking-widest">Financial Security Active</p>
+                        <h3 class="text-sm font-bold text-slate-900">
+                            Amount: 
+                            {% if is_admin or is_owner %}
+                                <span class="text-primary">${{ item.amount }}</span>
+                            {% else %}
+                                <span class="masked-amount">••••••</span>
+                            {% endif %}
+                        </h3>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- AI Match Suggestions -->
-    {% if ai_suggestions %}
-    <div class="card-modern" style="margin-top: 24px; border-top: 4px solid var(--indigo);">
-        <h3 class="mb-4" style="display: flex; align-items: center; gap: 8px; color: var(--indigo);">
-            <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
-            AI Match Suggestions
-        </h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-            Our AI identified these similar items in the system:
-        </p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
-            {% for match in ai_suggestions %}
-            <a href="{% url 'items:item_detail' match.id %}" class="card-item-mini" style="text-decoration: none; display: block; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.2s;">
-                <div style="height: 100px; background: #f8fafc;">
-                    {% if match.image %}
-                    <img src="{{ match.image.url }}" style="width: 100%; height: 100%; object-fit: cover;">
-                    {% else %}
-                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><i data-lucide="image" style="color: #cbd5e1;"></i></div>
+                {% if item.report_type == 'found' and item.turnover_status == 'pending' %}
+                    {% if is_owner %}
+                        <div class="turnover-banner">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="info" class="w-4 h-4 text-warning"></i>
+                                <h3>Mandatory Turnover Required</h3>
+                            </div>
+                            <p>Found cash must be turned in to the Campus Security Office for vault storage before this report becomes public.</p>
+                        </div>
+                    {% elif is_admin %}
+                        <div class="turnover-banner !bg-primary/5 !border-primary/20">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="shield-check" class="w-4 h-4 text-primary"></i>
+                                        <h3 class="!text-primary uppercase tracking-widest font-black">Awaiting Physical Receipt</h3>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">Verify cash receipt in the office before approving.</p>
+                                </div>
+                                <form method="post" action="{% url 'items:confirm_turnover' item.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-primary text-white text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-primary-hover shadow-sm transition-all focus:ring-4 focus:ring-primary/10">
+                                        Confirm Receipt
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+
+            <div class="flex-1 space-y-8">
+                <!-- Details -->
+                <section class="detail-section">
+                    <div class="detail-section-label">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <span>Description</span>
+                    </div>
+                    <div class="detail-content-box">
+                        {{ item.description|default:"No details provided for this item." }}
+                        
+                        {% if item.is_money and item.denominations and is_admin or is_owner %}
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Denominations (Private)</p>
+                                <p class="text-sm italic text-slate-600">{{ item.denominations }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <!-- Location -->
+                <section class="detail-section">
+                    <div class="detail-section-label">
+                        <span>Location</span>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-icon-circle icon-purple">
+                            <i data-lucide="map-pin" class="w-6 h-6"></i>
+                        </div>
+                        <div class="detail-row-text">
+                            <h3>{{ item.location }}</h3>
+                            <p>Where item was last seen</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Contact Person -->
+                <section class="detail-section">
+                    <div class="detail-section-label">
+                        <span>Contact Person</span>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-icon-circle icon-gray overflow-hidden">
+                            {% if item.owner.userprofile.avatar %}
+                                <img src="{{ item.owner.userprofile.avatar.url }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-600 font-black text-sm uppercase">
+                                    {{ item.owner.username|slice:":1" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="detail-row-text">
+                            <h3>{% if item.owner.get_full_name %}{{ item.owner.get_full_name }}{% else %}{{ item.owner.username }}{% endif %}</h3>
+                            <p>{{ item.owner.email|default:item.owner.username }}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Action Button -->
+                <div class="flex items-center gap-4">
+                    {% if not item.is_deleted %}
+                        <!-- Management Console (Admins & Owners) -->
+                        {% if request.user.is_staff or request.user.userprofile.is_admin or item.owner == request.user %}
+                            {% url 'items:edit_item' item.id as edit_url %}
+                            <button class="btn-premium-claim !bg-slate-100 !text-slate-600 !border-slate-200" 
+                                    @click.prevent="openModal('Edit Details', '{{ edit_url }}', 'max-w-3xl')">
+                                <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                <span class="hidden sm:inline">Modify Record</span>
+                            </button>
+                        {% endif %}
+
+                        <!-- Primary Contact Gateway (Viewers) -->
+                        {% if item.owner != request.user %}
+                            {% with active_claim=item.claims.filter|first %}
+                                {% if active_claim and active_claim.claimer == request.user and active_claim.status == 'approved' %}
+                                    <a href="{% url 'items:claim_pass' active_claim.id %}" class="flex-1 bg-secondary text-white flex items-center justify-center gap-3 py-5 rounded-3xl shadow-xl shadow-secondary/20 hover:scale-105 transition-all">
+                                        <i data-lucide="qr-code" class="w-5 h-5"></i>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Digital Handover Pass</span>
+                                    </a>
+                                {% elif item.report_type == 'found' %}
+                                    {% url 'items:conversation' item.owner.id as chat_url %}
+                                    <a href="{{ chat_url }}" class="flex-1 bg-primary text-white flex items-center justify-center gap-3 py-5 rounded-3xl shadow-xl shadow-primary/20 hover:bg-primary-hover transition-all">
+                                        <i data-lucide="message-circle" class="w-5 h-5"></i>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Contact Finder</span>
+                                    </a>
+                                {% else %}
+                                    <a href="mailto:{{ item.owner.email }}" class="flex-1 bg-primary text-white flex items-center justify-center gap-3 py-5 rounded-3xl shadow-xl shadow-primary/20 hover:bg-primary-hover transition-all">
+                                        <i data-lucide="mail" class="w-5 h-5"></i>
+                                        <span class="text-[10px] font-black uppercase tracking-widest">Contact Owner</span>
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        
+                        <!-- Admin Specific: Delete -->
+                        {% if request.user.is_staff or request.user.userprofile.is_admin %}
+                            <form method="post" action="{% url 'items:delete_item' item.id %}" class="inline-block">
+                                {% csrf_token %}
+                                <button type="button" class="w-14 h-14 flex items-center justify-center rounded-2xl bg-danger/10 text-danger hover:bg-danger hover:text-white transition-all shadow-sm"
+                                        @click.prevent="customConfirm('Delete Report?', 'This will move the report to the system trash bin. Continue?', () => $el.closest('form').submit())">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </form>
+                        {% endif %}
                     {% endif %}
                 </div>
-                <div style="padding: 10px;">
-                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dark); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ match.name }}</p>
-                    <p style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">{{ match.location }}</p>
-                </div>
-            </a>
-            {% endfor %}
+
+                <p class="mt-6 text-center text-[9px] font-black uppercase tracking-widest text-slate-300">
+                    Direct communication ensures a faster recovery process.
+                </p>
+            </div>
         </div>
     </div>
-    {% endif %}
-
-    <!-- Contact Section -->
-    <div class="card-modern" style="margin-top: 24px; border-left: 4px solid var(--primary);">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 style="display: flex; align-items: center; gap: 8px; margin: 0;">
-                <i data-lucide="user-check" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                Contact Information
-            </h3>
-            
-            {% if request.user.is_authenticated and request.user != item.owner %}
-            <a href="{% url 'items:conversation' item.owner.id %}" class="btn btn-primary" style="background: var(--indigo); border-color: var(--indigo);">
-                <i data-lucide="message-circle" style="width: 16px; height: 16px;"></i>
-                Message Finder
-            </a>
-            {% endif %}
-        </div>
-        
-        <div style="display: flex; gap: 64px; margin-top: 24px;">
-            {% if item.contact_name %}
-            <div>
-                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Reporter</div>
-                <div style="font-weight: 700; color: var(--text-dark);">{{ item.contact_name }}</div>
-            </div>
-            {% endif %}
-            
-            <div>
-                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Identity Verification</div>
-                <div style="display: flex; align-items: center; gap: 6px; color: var(--emerald); font-weight: 700; font-size: 14px;">
-                    <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
-                    ID Verified
-                </div>
-            </div>
-
-            {% if item.contact_email %}
-            <div>
-                <div class="form-label" style="font-size: 11px; text-transform: uppercase;">Privacy Status</div>
-                <div style="font-weight: 600; color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
-                    Email Hidden for Privacy
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Claim Info Note -->
-    {% if item.status != 'claimed' and request.user != item.owner %}
-    <div style="margin-top: 32px; text-align: center; background: #fffbeb; padding: 16px; border-radius: 16px; border: 1px solid #fde68a;">
-        <p style="font-size: 13px; color: #92400e; font-weight: 500;">
-            <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></i>
-            You will be asked to provide proof of ownership via secure message when claiming this item.
-        </p>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

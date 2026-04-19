@@ -1,47 +1,10 @@
-from django.contrib.auth.signals import user_logged_in
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
-from . import models
+from django.contrib.auth.models import User
+from .models import UserProfile
 
-User = get_user_model()
-
-@receiver(user_logged_in)
-def log_user_login(sender, request, user, **kwargs):
-    ip_address = request.META.get('REMOTE_ADDR')
-    login_source = 'Admin' if request.path.startswith('/admin/') else 'Web Portal'
-    models.UserLoginLog.objects.create(user=user, ip_address=ip_address, login_source=login_source)
-
-
-if hasattr(models, 'UserProfile'):
-    @receiver(post_save, sender=User)
-    def create_user_profile(sender, instance, created, **kwargs):
-        if created:
-            models.UserProfile.objects.get_or_create(user=instance)
-
-    @receiver(post_save, sender=User)
-    def save_user_profile(sender, instance, **kwargs):
-        if hasattr(instance, 'userprofile'):
-            instance.userprofile.save()
-
-@receiver(post_save, sender=models.Item)
-def track_item_upload(sender, instance, **kwargs):
-    """Save a record of uploaded item images."""
-    if instance.image and hasattr(instance, 'owner') and instance.owner:
-        if not models.UploadedFile.objects.filter(file=instance.image.name).exists():
-            models.UploadedFile.objects.create(
-                file=instance.image,
-                uploader=instance.owner,
-                role=instance.owner.userprofile.user_type
-            )
-
-@receiver(post_save, sender=models.UserProfile)
-def track_avatar_upload(sender, instance, **kwargs):
-    """Save a record of uploaded avatars."""
-    if instance.avatar:
-        if not models.UploadedFile.objects.filter(file=instance.avatar.name).exists():
-            models.UploadedFile.objects.create(
-                file=instance.avatar,
-                uploader=instance.user,
-                role=instance.user_type
-            )
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Ensure every User has a UserProfile."""
+    if created:
+        UserProfile.objects.get_or_create(user=instance)

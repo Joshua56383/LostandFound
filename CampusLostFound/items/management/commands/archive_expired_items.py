@@ -30,7 +30,7 @@ class Command(BaseCommand):
             expires_at__lte=warning_threshold,
             expires_at__gt=now,
             status__in=['lost', 'found'],
-            is_approved=True,
+            verification_status='approved',
         )
 
         warned_count = 0

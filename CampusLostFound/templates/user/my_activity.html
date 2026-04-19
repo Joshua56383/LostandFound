@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Reports - DMMMSU Recovery Hub{% endblock %}
+
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">My Reports</span>
+{% endblock %}
+
+{% block content %}
+<div x-data="{ activeTab: 'reports' }" class="pb-20">
+    <header class="mb-12">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="flex h-3 w-3 rounded-full bg-primary shadow-[0_0_10px_rgba(37,99,235,0.5)]"></span>
+            <span class="text-[10px] font-black uppercase tracking-[0.25em] text-text-light opacity-60">Your Activity Hub</span>
+        </div>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+                <h1 class="page-title text-5xl mb-4 tracking-tighter">My Activity</h1>
+                <p class="page-subtitle max-w-lg italic opacity-70 font-medium">Keep track of your reports and pending claims here.</p>
+            </div>
+            <!-- Tab Switcher -->
+            <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
+                <button @click="activeTab = 'reports'" 
+                        :class="activeTab === 'reports' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300">
+                    My Reports
+                </button>
+                <button @click="activeTab = 'claims'" 
+                        :class="activeTab === 'claims' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                        class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300">
+                    My Claims
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+            <div class="flex items-center gap-4 mb-4 text-primary">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <i data-lucide="package" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">Success Rate</span>
+            </div>
+            <div class="text-4xl font-black text-text-main">{{ stats.resolved }} <span class="text-lg opacity-40">/ {{ stats.total_reported }}</span></div>
+        </div>
+
+        <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-secondary/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+            <div class="flex items-center gap-4 mb-4 text-secondary">
+                <div class="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">Active Claims</span>
+            </div>
+            <div class="text-4xl font-black text-text-main">{{ stats.active_claims }}</div>
+        </div>
+
+        <div class="bg-white/40 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-success/5 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+            <div class="flex items-center gap-4 mb-4 text-success">
+                <div class="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center">
+                    <i data-lucide="heart" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">Identity Status</span>
+            </div>
+            <div class="text-4xl font-black text-text-main">Trusted Member</div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Reports -->
+    <div x-show="activeTab === 'reports'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4">
+        <div class="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-sm">
+            <div class="flex flex-col gap-4">
+                {% for item in items %}
+                <div class="flex items-center gap-6 bg-white/60 hover:bg-white border border-white/80 rounded-[2rem] p-5 transition-all duration-300 group shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-main border-2 border-border flex-shrink-0 shadow-sm relative">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                        {% else %}
+                            <div class="flex items-center justify-center h-full opacity-10">
+                                <i data-lucide="package" class="w-8 h-8 text-text-main"></i>
+                            </div>
+                        {% endif %}
+                        <div class="absolute top-1 right-1 w-3 h-3 rounded-full border-2 border-white shadow-sm" :class="'{{ item.status }}' == 'lost' ? 'bg-navy' : 'bg-primary'"></div>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-black text-text-main text-lg tracking-tight mb-1 truncate">{{ item.name }}</h4>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            {% include 'includes/components/status_badge.html' with item=item dot=true class="!shadow-none !py-0.5 !px-2 !text-[8px]" %}
+                            <span class="text-[9px] font-black text-text-light uppercase tracking-widest opacity-40">
+                                Reported {{ item.date_reported|timesince }} ago
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button @click.prevent="openModal('', '{% url 'items:item_detail' item.id %}', 'max-w-4xl')" class="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"><i data-lucide="eye" class="w-5 h-5"></i></button>
+                        <button @click.prevent="openModal('', '{% url 'items:edit_item' item.id %}', 'max-w-4xl')" class="p-3 rounded-xl bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"><i data-lucide="settings-2" class="w-5 h-5"></i></button>
+                        <form method="post" action="{% url 'items:delete_item' item.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="button" @click.stop.prevent="customConfirm('Delete Report?', 'Remove this report from your activity history?', () => $el.closest('form').submit())"
+                                    class="p-3 rounded-xl bg-red-50 text-red-300 hover:text-danger hover:bg-danger/10 transition-all">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="py-24 text-center opacity-40"><p class="font-black uppercase tracking-widest text-xs">No active reports filed.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Claims -->
+    <div x-show="activeTab === 'claims'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4">
+        <div class="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-sm">
+            <div class="flex flex-col gap-4">
+                {% for claim in claims %}
+                <div class="flex items-center gap-6 bg-white/60 hover:bg-white border border-white/80 rounded-[2rem] p-5 transition-all duration-300 group shadow-sm hover:shadow-md">
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-main border-2 border-border flex-shrink-0 shadow-sm">
+                        {% if claim.item.image %}
+                            <img src="{{ claim.item.image.url }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="flex items-center justify-center h-full opacity-10"><i data-lucide="shield" class="w-8 h-8"></i></div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-black text-text-main text-lg tracking-tight mb-1 truncate">{{ claim.item.name }}</h4>
+                        <div class="flex items-center gap-3">
+                            <span class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest 
+                                {% if claim.status == 'approved' %}bg-success/10 text-success border border-success/20
+                                {% elif claim.status == 'rejected' %}bg-danger/10 text-danger border border-danger/20
+                                {% else %}bg-secondary/10 text-secondary border border-secondary/20{% endif %}">
+                                {{ claim.status }}
+                            </span>
+                            <span class="text-[9px] font-black text-text-light uppercase tracking-widest opacity-40">Claim Request Sent</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        {% if claim.status == 'approved' %}
+                            <a href="{% url 'items:claim_pass' claim.id %}" class="px-5 py-2.5 bg-secondary text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-secondary/10">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                                Get Handover Pass
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'items:item_detail' claim.item.id %}" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all">View Item</a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="py-24 text-center opacity-40"><p class="font-black uppercase tracking-widest text-xs">You have no active recovery claims.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

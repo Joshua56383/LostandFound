@@ -1,103 +1,183 @@
-{% extends 'base.html' %}
+{% extends base_template %}
 {% load static %}
 
-{% block title %}Admin Portal - Trash{% endblock %}
+{% block title %}Trash Bin - DMMMSU Recovery Hub{% endblock %}
 
-{% block header %}{% endblock %}
+{% block breadcrumbs %}
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Trash Bin</span>
+{% endblock %}
 
 {% block content %}
-<div class="flex h-screen bg-[#f8fafc] overflow-hidden font-sans" x-data="{ sidebarOpen: true }">
-
-    {% include 'admin/_admin_sidebar.html' %}
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
-
-        <!-- Top Bar -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
-            <nav class="flex items-center gap-2 text-sm font-medium">
-                <a href="{% url 'items:dashboard' %}" class="text-indigo-600 hover:underline">Admin</a>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-                <span class="text-gray-900">Trash</span>
-            </nav>
-            <div class="flex items-center gap-4">
-                <div class="flex flex-col items-end">
-                    <span class="text-sm font-bold text-gray-900 leading-none">System Admin</span>
-                    <span class="text-[11px] text-gray-400 mt-0.5">{{ request.user.email }}</span>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
-                    {{ request.user.username|slice:":2"|upper }}
-                </div>
+<div x-data="{ 
+    selectedItems: [],
+    selectAll: false,
+    toggleAll() {
+        this.selectAll = !this.selectAll;
+        if (this.selectAll) {
+            this.selectedItems = Array.from(document.querySelectorAll('input[name=\'item_ids\']')).map(el => el.value);
+        } else {
+            this.selectedItems = [];
+        }
+    }
+}">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+        <div>
+            <div class="flex items-center gap-3 mb-4">
+                <span class="flex h-3 w-3 rounded-full bg-danger animate-pulse"></span>
+                <span class="text-[10px] font-black uppercase tracking-[0.25em] text-text-light opacity-60">Maintenance
+                    Vault</span>
             </div>
-        </header>
-
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-8">
-            <div>
-                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Trash</h2>
-                <p class="text-gray-500 font-medium text-lg mt-1">
-                    Deleted items are stored here. You can restore them if needed.
-                </p>
-            </div>
-
-            {% if deleted_items %}
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Item</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Deleted By</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Deleted At</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        {% for item in deleted_items %}
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                                        <i data-lucide="trash-2" class="w-5 h-5 text-gray-400"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-gray-900 text-sm">{{ item.name }}</p>
-                                        <p class="text-xs text-gray-400 truncate max-w-[200px]">{{ item.description|truncatewords:8 }}</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">{{ item.category|default:"—" }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
-                                {{ item.owner.username|default:"Unknown" }}
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                {{ item.deleted_at|date:"M d, Y H:i" }}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <form method="post" action="{% url 'items:restore_item' item.pk %}">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
-                                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                                        Restore
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-                <i data-lucide="trash-2" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-                <h3 class="text-lg font-bold text-gray-900 mb-1">Trash is Empty</h3>
-                <p class="text-gray-500 text-sm">Deleted items will appear here and can be restored.</p>
-            </div>
-            {% endif %}
+            <h1 class="page-title text-5xl mb-4 tracking-tighter">System Trash</h1>
+            <p class="page-subtitle max-w-lg">Items staged for permanent deletion. You can restore them to the active
+                registry or clear them from the database.</p>
         </div>
-    </main>
+
+        {% if items %}
+        <div class="flex gap-4">
+            <form action="{% url 'items:empty_trash' %}" method="post"
+                @submit.prevent="const f = $el; customConfirm('Empty Trash Bin', 'WARNING: This will permanently delete ALL items in the vault. This action is irreversible.', () => f.submit())">
+                {% csrf_token %}
+                <button type="submit"
+                    class="group flex items-center gap-3 px-8 py-5 rounded-[1.5rem] bg-white text-danger border-2 border-danger/10 hover:bg-danger hover:text-white transition-all font-black uppercase tracking-widest text-[10px] shadow-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span>Purge Vault</span>
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </header>
+
+    {% if items %}
+    <!-- Glass Bulk Actions -->
+    <div class="sticky top-6 z-40 mb-8 bg-white/60 backdrop-blur-xl border border-primary/20 p-6 rounded-[2.5rem] shadow-massive flex flex-col sm:flex-row items-center justify-between gap-6"
+        x-show="selectedItems.length > 0" x-cloak x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 -translate-y-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-sm shadow-premium"
+                x-text="selectedItems.length"></div>
+            <div>
+                <p class="text-xs font-black text-text-main uppercase tracking-widest">Staged for Restoration</p>
+                <p class="text-[9px] font-bold text-text-light opacity-60 uppercase">Bulk Recovery Mode Active</p>
+            </div>
+        </div>
+        <div class="flex gap-3 w-full sm:w-auto">
+            <form action="{% url 'items:bulk_restore' %}" method="post" class="flex-1">
+                {% csrf_token %}
+                <template x-for="id in selectedItems" :key="id">
+                    <input type="hidden" name="item_ids" :value="id">
+                </template>
+                <button type="submit"
+                    class="w-full btn bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-premium transition-all">
+                    <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+                    <span>Restore Selected</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+        <!-- Table Header (Simplified for High-Fi Grid) -->
+        <div
+            class="hidden lg:grid grid-cols-12 gap-6 px-10 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-text-light opacity-40">
+            <div class="col-span-1 flex items-center">
+                <input type="checkbox" @click="toggleAll()" :checked="selectAll"
+                    class="rounded-lg border-slate-200 text-primary focus:ring-primary h-5 w-5 cursor-pointer">
+            </div>
+            <div class="col-span-4">Asset Details</div>
+            <div class="col-span-2">Category</div>
+            <div class="col-span-2">Original Owner</div>
+            <div class="col-span-2">Managed On</div>
+            <div class="col-span-1 text-right">Actions</div>
+        </div>
+
+        {% for item in items %}
+        <div class="bg-white border border-border/40 rounded-[2rem] p-6 lg:p-4 hover:shadow-premium transition-all group relative overflow-hidden"
+            :class="selectedItems.includes('{{ item.id }}') ? 'border-primary/30 bg-primary/[0.02]' : ''">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <!-- Checkbox -->
+                <div class="lg:col-span-1">
+                    <input type="checkbox" name="item_ids" value="{{ item.id }}" x-model="selectedItems"
+                        class="rounded-lg border-slate-200 text-primary focus:ring-primary h-6 w-6 cursor-pointer">
+                </div>
+
+                <!-- Identity -->
+                <div class="lg:col-span-4 flex items-center gap-5">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-slate-50 border border-border/40 flex items-center justify-center shrink-0 overflow-hidden group-hover:bg-white transition-colors">
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <i data-lucide="package" class="w-7 h-7 text-text-light/20"></i>
+                        {% endif %}
+                    </div>
+                    <div class="min-w-0">
+                        <h4
+                            class="text-base font-black text-text-main truncate mb-0.5 group-hover:text-primary transition-colors">
+                            {{ item.name }}</h4>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-black text-text-light uppercase tracking-widest opacity-60">ID
+                                #{{ item.id }}</span>
+                            <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                            <span class="text-[9px] font-black text-danger uppercase tracking-widest">Soft
+                                Deleted</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="lg:col-span-2">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-[9px] font-black uppercase tracking-widest text-text-light group-hover:bg-white group-hover:text-primary transition-all">
+                        {{ item.category|default:"Registry" }}
+                    </span>
+                </div>
+
+                <!-- Owner -->
+                <div class="lg:col-span-2">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-[10px] uppercase">
+                            {{ item.owner.username|slice:":1"|upper }}
+                        </div>
+                        <span class="text-xs font-black text-text-main">@{{ item.owner.username }}</span>
+                    </div>
+                </div>
+
+                <!-- Date -->
+                <div class="lg:col-span-2">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-black text-text-main">{{ item.deleted_at|date:"M d, Y" }}</span>
+                        <span class="text-[9px] font-bold text-text-light opacity-50 uppercase tracking-tighter">{{ item.deleted_at|timesince }} ago</span>
+                    </div>
+                </div>
+
+                <!-- Restoration -->
+                <div class="lg:col-span-1 text-right">
+                    <form method="post" action="{% url 'items:restore_item' item.pk %}" class="inline-block">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="w-10 h-10 rounded-xl bg-slate-50 text-text-light hover:bg-primary hover:text-white transition-all flex items-center justify-center border border-border/40 shadow-sm"
+                            title="Restore Item">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div
+        class="flex flex-col items-center justify-center p-32 bg-white/40 border-2 border-dashed border-border/40 rounded-[3rem] text-center">
+        <div
+            class="w-24 h-24 bg-slate-50 text-text-light/20 rounded-[2.5rem] flex items-center justify-center mb-8 transform -rotate-12 transition-transform hover:rotate-0">
+            <i data-lucide="ghost" class="w-12 h-12"></i>
+        </div>
+        <h3 class="text-2xl font-black text-text-main mb-3 uppercase tracking-tight">The Vault is Silent</h3>
+        <p class="text-sm text-text-light max-w-sm font-medium leading-relaxed opacity-60">No pending records found in
+            the system trash bin. All assets are currently active or permanently resolved.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

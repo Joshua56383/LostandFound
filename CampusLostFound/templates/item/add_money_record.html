@@ -1,0 +1,247 @@
+{% extends base_template %}
+{% load static %}
+
+{% block title %}Report Money - DMMMSU Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="w-full relative pt-6" x-data="moneyRecordForm()" x-init="init()">
+    
+    <!-- Centered Header with Integrated Action -->
+    <div class="px-10 pt-10 pb-4 text-center">
+        <!-- Integrated Close Button -->
+        <button @click="closeModal()" class="absolute right-6 top-6 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+
+        <h1 class="text-3xl font-black tracking-tight mb-8">Cash & <span class="text-primary">Wallet</span></h1>
+        
+        <!-- Centered Status Switcher -->
+        <div class="status-toggle-group justify-center max-w-md mx-auto">
+            <button type="button" 
+                    @click="currentStatus = 'lost'"
+                    class="status-toggle-btn is-lost"
+                    :class="{ 'active': currentStatus === 'lost' }">
+                <i data-lucide="trending-down"></i>
+                <span>I Lost This</span>
+            </button>
+            <button type="button" 
+                    @click="currentStatus = 'found'"
+                    class="status-toggle-btn is-found"
+                    :class="{ 'active': currentStatus === 'found' }">
+                <i data-lucide="trending-up"></i>
+                <span>I Found This</span>
+            </button>
+        </div>
+    </div>
+        
+    <form method="POST" action="{% url 'items:money_tracker' %}" class="flex flex-col" id="add-money-form" @submit.prevent="handleFormSubmit">
+        {% csrf_token %}
+        <input type="hidden" name="category" value="Wallet / Money">
+        <input type="hidden" name="report_type" :value="currentStatus">
+
+        <!-- System Feedback Notification -->
+        <div x-show="errorMessage" x-cloak 
+             class="px-10 py-5 bg-danger-light/20 border-b border-danger/10 mb-8 mx-10 rounded-2xl">
+            <div class="flex items-center gap-3 text-danger">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                <p class="text-[11px] font-black uppercase tracking-wider" x-text="errorMessage"></p>
+            </div>
+        </div>
+
+        <!-- Registry Form Body -->
+        <div class="px-10 space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Sumary Name -->
+                <div>
+                    <label class="form-label-premium">WHAT WAS FOUND/LOST? *</label>
+                    <input type="text" name="name" required class="input-field shadow-sm" placeholder="e.g., Black Long Wallet with Cash" value="{{ form.name.value|default:'' }}">
+                </div>
+
+                <!-- Amount -->
+                <div>
+                    <label class="form-label-premium">EST. VALUE (PHP) *</label>
+                    <div class="relative">
+                        <input type="number" step="0.01" name="amount" required class="input-field pl-12 shadow-sm" placeholder="0.00" value="{{ form.amount.value|default:'' }}">
+                        <span class="absolute left-6 top-1/2 -translate-y-1/2 font-black text-gray-400">₱</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Synchronized Location Hub -->
+            <section class="space-y-3">
+                <label class="form-label-premium">DISCOVERY COORDINATES *</label>
+                <div class="bg-gray-50/50 rounded-2xl p-2 border border-gray-100 shadow-inner">
+                    <!-- Tab Switcher -->
+                    <div class="grid grid-cols-3 gap-1 mb-3">
+                        <button type="button" @click="locationTab = 'campus'" :class="locationTab === 'campus' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
+                            Campus
+                        </button>
+                        <button type="button" @click="locationTab = 'custom'" :class="locationTab === 'custom' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
+                            Custom
+                        </button>
+                        <button type="button" @click="locationTab = 'gps'" :class="locationTab === 'gps' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
+                            GPS
+                        </button>
+                    </div>
+
+                    <!-- Tab Content: Campus List -->
+                    <div x-show="locationTab === 'campus'" class="space-y-3 px-1">
+                        <div class="relative">
+                            <input type="text" x-model="locationSearch" class="input-field py-2 text-xs pr-12 bg-white/80" placeholder="Search buildings...">
+                            <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300"></i>
+                        </div>
+                        <div class="max-h-[120px] overflow-y-auto space-y-1 pb-2 custom-scrollbar">
+                            <template x-for="loc in filteredLocations" :key="loc">
+                                <button type="button" @click="selectLocation(loc)" 
+                                        class="w-full text-left px-4 py-2.5 rounded-lg text-[11px] font-bold text-gray-500 hover:bg-white hover:text-secondary transition-all flex items-center gap-3">
+                                    <div class="w-1.5 h-1.5 rounded-full border-2 border-gray-200" :class="selectedLocation === loc ? 'border-secondary bg-secondary' : ''"></div>
+                                    <span x-text="loc"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: Custom -->
+                    <div x-show="locationTab === 'custom'" x-cloak class="px-1 pb-2">
+                        <input type="text" x-model="selectedLocation" class="input-field text-xs bg-white/80" placeholder="Specify floor, room, or sub-area...">
+                    </div>
+
+                    <!-- Tab Content: GPS -->
+                    <div x-show="locationTab === 'gps'" x-cloak class="px-1 pb-2 flex flex-col items-center justify-center py-4">
+                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-secondary shadow-sm border border-gray-100 mb-3" :class="gpsLoading ? 'animate-pulse' : ''">
+                            <i data-lucide="navigation" class="w-5 h-5" x-show="!gpsLoading"></i>
+                            <i data-lucide="loader-2" class="w-5 h-5 animate-spin" x-show="gpsLoading"></i>
+                        </div>
+                        <button type="button" @click="getGPS()" class="px-5 py-2 bg-white border border-gray-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-secondary hover:bg-gray-50" :disabled="gpsLoading">
+                            <span x-show="!gpsLoading">Acquire GPS Data</span>
+                            <span x-show="gpsLoading">Syncing...</span>
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="location" :value="selectedLocation" required>
+                <div class="flex items-center gap-2 px-1" x-show="selectedLocation">
+                    <i data-lucide="map-pin" class="w-3 h-3 text-secondary"></i>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-secondary" x-text="selectedLocation"></span>
+                </div>
+            </section>
+
+            <!-- Identifying Details -->
+            <div>
+                <label class="form-label-premium">DESCRIPTIVE AUDIT *</label>
+                <textarea name="description" rows="3" class="input-field shadow-inner resize-none" placeholder="Include denominations, unique markings, or specific contents (e.g., student IDs within wallet)...">{{ form.description.value|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- High-Fidelity Action Bar -->
+        <footer class="px-10 py-8 bg-gray-50/50 flex justify-start items-center gap-5 border-t border-gray-100 mt-6 rounded-b-[32px]">
+            <button type="submit" class="h-12 px-10 rounded-full bg-secondary text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg flex items-center justify-center whitespace-nowrap" :disabled="submitting">
+                <span x-show="!submitting" class="flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Register Field Record</span>
+                </span>
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin" x-show="submitting"></i>
+            </button>
+            <button type="button" @click="closeModal()" class="h-12 px-10 rounded-full bg-white border-2 border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-secondary hover:border-secondary transition-all flex items-center justify-center whitespace-nowrap">Cancel Filing</button>
+        </footer>
+    </form>
+</div>
+
+<script>
+    window.moneyRecordForm = function() {
+        return {
+            submitting: false,
+            errorMessage: '',
+            currentStatus: '{{ form.report_type.value|default:"found"|escapejs }}',
+            locationTab: 'campus',
+            locationSearch: '',
+            selectedLocation: '{{ form.location.value|default:''|escapejs }}',
+            campusLocations: [
+                'Administration Building', 'Main Library', 'Student Center', 'CET Building', 
+                'CAS Building', 'CET / Engineering Laboratory', 'JICA Building / JICA-Assisted Facility',
+                'Eco-Park / Campus Park Area', 'Experimental Farm', 'Open Field / Sports Complex',
+                'University Infirmary', 'Computer Center', 'Research & Extension Office'
+            ],
+            gpsLoading: false,
+            
+            init() {
+                if (window.lucide) lucide.createIcons();
+            },
+            
+            get filteredLocations() {
+                if (!this.locationSearch) return this.campusLocations;
+                return this.campusLocations.filter(loc => loc.toLowerCase().includes(this.locationSearch.toLowerCase()));
+            },
+
+            selectLocation(loc) {
+                this.selectedLocation = loc;
+                this.locationSearch = '';
+            },
+
+            closeModal() {
+                if (window.modalOpen !== undefined) window.modalOpen = false;
+                else if (this.$dispatch) this.$dispatch('close-modal');
+            },
+
+            async handleFormSubmit() {
+                this.submitting = true;
+                this.errorMessage = '';
+                
+                const form = document.querySelector('#add-money-form');
+                const formData = new FormData(form);
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        // Notify success and refresh the Ledger partial
+                        if (window.showToast) window.showToast('Record filed successfully.', 'success');
+                        this.closeModal();
+                        
+                        // Force a partial refresh of the record table if we are on the tracker page
+                        if (window.location.pathname.includes('money-tracker')) {
+                            window.location.reload();
+                        }
+                    } else {
+                        this.errorMessage = data.message || 'Validation failed. Please audit your entries.';
+                        this.submitting = false;
+                    }
+                } catch (e) {
+                    this.errorMessage = 'Network error: Submission could not reach the registry.';
+                    this.submitting = false;
+                }
+            },
+
+            async getGPS() {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
+                }
+                this.gpsLoading = true;
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        this.selectedLocation = data.display_name || `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    } catch (e) {
+                        this.selectedLocation = `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    }
+                    this.gpsLoading = false;
+                }, (err) => {
+                    this.errorMessage = 'GPS Sync Failure: Unable to acquire institutional coordinates.';
+                    this.locationTab = 'custom';
+                    this.gpsLoading = false;
+                }, { timeout: 10000 });
+            }
+        }
+    }
+</script>
+{% endblock %}

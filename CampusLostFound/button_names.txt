@@ -1,0 +1,110 @@
+Accept
+Account Settings
+Apply Updates 
+                 
+                 
+                     
+                     Processing
+Approve Batch
+Back to Dashboard
+Back to Profile
+Browse Items
+Campus List
+Cancel
+Change Password 
+                             
+                         
+                         
+                             
+                             Saving password
+Claim Item
+Clear All
+Confirm Action
+Confirm Ownership
+Create Account 
+                             
+                         
+                         
+                             
+                             Creating account
+Currency
+Custom
+Dashboard
+Delete Account
+Deny Claim
+Discard Changes
+Download CSV
+Edit Profile
+Export
+Export Data
+GPS
+Ledger
+Log In 
+                             
+                         
+                         
+                             
+                             Logging in
+Log New Entry
+Manage
+Manage Case
+Mark All as Read
+New Asset
+Purge Vault
+Release Entry
+Remove
+Report Currency 
+         Securely log found currency for crossverification triage
+Report Item
+Report Lost  Found 
+             Register a new asset to start the automated recovery workflow
+Report Money
+Reset Password
+Restore Selected
+Save Registry Record
+Scan My Location 
+                                 Acquiring
+Search
+Send Email
+Send reset link 
+                             
+                         
+                         
+                             
+                             Processing
+Settings
+Sign Out
+Submit Claim Request 
+                     
+                 
+                 
+                     
+                     Sending
+Submit Report
+Update Profile 
+                     
+                     
+                         
+                         Saving
+View Dashboard
+View Details
+View Full Reports
+if targetuserisactive Deactivate Account else Activate Account endif
+if targetuserisstaff Demote to Member else Promote to Admin endif
+if unreadcount  0 
+       
+         unreadcount 
+       
+     endif
+if useruserprofile and useruserprofileavatar 
+                                 
+                             else 
+                                 userusernameslice1upper 
+                             endif 
+                         
+                         
+                     
+                    
+                     
+                          if userfirstname  userfirstname  else  userusername  endif  
+                          if isadmin Admin Intelligence else Verified Student endif

@@ -1,0 +1,67 @@
+{% comment %} 
+  Reusable Select Component
+  Parameters:
+    - name: Select name attribute (required)
+    - label: Label text (optional)
+    - options: List of option dictionaries/tuples (required)
+    - selected_value: Currently selected value
+    - required: Boolean
+    - icon_class: Lucide icon name (optional)
+    - id: Element ID
+    - class: Additional CSS classes for select
+    - wrapper_class: Additional CSS classes for wrapper
+{% endcomment %}
+
+{% spaceless %}
+<div class="w-full {{ wrapper_class }}">
+  {% if label %}
+    <label for="{{ id|default:'id_'|add:name }}" class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">
+      {{ label }}
+      {% if required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+  {% endif %}
+  
+  <div class="relative group">
+    {% if icon_class %}
+      <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors pointer-events-none">
+        <i data-lucide="{{ icon_class }}" class="w-5 h-5"></i>
+      </div>
+    {% endif %}
+    
+    <select
+      name="{{ name }}"
+      id="{{ id|default:'id_'|add:name }}"
+      {% if required %}required{% endif %}
+      class="
+        w-full
+        px-4 py-3
+        rounded-[1.25rem]
+        border-2 border-primary/5
+        text-sm font-bold text-gray-700
+        bg-white/80 backdrop-blur-sm
+        transition-all duration-300
+        focus:outline-none focus:border-primary/40 focus:ring-8 focus:ring-primary/5
+        appearance-none
+        {% if icon_class %}pl-12{% endif %}
+        pr-10
+        {{ class }}
+      "
+    >
+      {% for opt_val, opt_label in options %}
+        <option value="{{ opt_val }}" {% if opt_val|stringformat:"s" == selected_value|stringformat:"s" %}selected{% endif %}>
+          {{ opt_label }}
+        </option>
+      {% endfor %}
+    </select>
+    
+    <!-- Custom Arrow -->
+    <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+      <i data-lucide="chevron-down" class="w-4 h-4"></i>
+    </div>
+  </div>
+  
+  {% if error %}
+    <p class="mt-1.5 px-1 text-[10px] font-bold text-danger uppercase tracking-tight">{{ error }}</p>
+  {% endif %}
+</div>
+{% endspaceless %}

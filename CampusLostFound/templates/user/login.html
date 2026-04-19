@@ -1,235 +1,130 @@
-{% extends base_template|default:"base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Login - Campus Lost & Found{% endblock %}
-
-{% block extra_head %}
-<!-- Authentication Custom Styles -->
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-{% endblock %}
+{% block title %}Login - DMMMSU Students{% endblock %}
 
 {% block content %}
-<div class="{% if base_template == 'base.html' %}min-h-screen flex w-full{% else %}py-8 px-4{% endif %} font-sans">
-
-    <!-- Left Column: Branding Sidebar Partial (Hidden in Modals) -->
-    {% if base_template == 'base.html' %}
-    {% include 'user/_auth_sidebar.html' %}
-    {% endif %}
-
-    <!-- Right Column: Auth Forms -->
-    <div class="{% if base_template == 'base.html' %}w-full md:w-1/2{% else %}w-full{% endif %} bg-white flex flex-col justify-center items-center py-12 px-6 sm:px-12 relative" 
-         x-data="{ 
-            mode: '{% if validlink is not None %}confirm{% elif request.GET.reset_sent or request.GET.reset_complete %}success{% else %}login{% endif %}',
-            showPassword: false 
-         }">
-        <div class="w-full max-w-[420px]">
-            <!-- Modal Header Image (Only in Modals) -->
-            {% if base_template != 'base.html' %}
-            <div class="mb-10 relative h-32 w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100">
-                <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop"
-                    alt="Campus" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent"></div>
-                <div class="absolute bottom-3 left-4 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/20">
-                        <i data-lucide="package" class="w-4 h-4 text-white"></i>
+<div class="auth-split-layout">
+    <!-- Cinematic Visual Panel (60%) -->
+    <div class="auth-visual-side">
+        <!-- The Campus Backdrop -->
+        <img src="{% static 'img/auth-bg.jpg' %}" alt="DMMMSU Campus" class="auth-cinematic-bg">
+        
+        <!-- Gradient + Blur Overlay -->
+        <div class="auth-overlay"></div>
+        
+        <!-- Branding Narrative Content -->
+        <div class="auth-branding-content">
+            <div class="mb-12">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shadow-2xl">
+                        <i data-lucide="search" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <div class="flex flex-col text-white">
+                        <span class="text-3xl font-black tracking-tighter leading-none">DMMMSU</span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.3em] mt-1 opacity-70">Recovery Hub</span>
                     </div>
                 </div>
-            </div>
-            {% endif %}
-
-            <!-- Header (Login) -->
-            <div class="mb-10 text-center md:text-left" x-show="mode === 'login'">
-                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 font-sans tracking-tight">Welcome back</h2>
-                <p class="text-gray-500 font-medium text-base">Sign in to your account to continue</p>
-            </div>
-
-            <!-- Header (Forgot Password) -->
-            <div class="mb-10 text-center md:text-left" x-show="mode === 'forgot'" style="display: none;">
-                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 font-sans tracking-tight">Forgot password?</h2>
-                <p class="text-gray-500 font-medium text-base">Enter your email and we'll send you a link to reset your password.</p>
-            </div>
-
-            <!-- Header (Reset Confirm) -->
-            <div class="mb-10 text-center md:text-left" x-show="mode === 'confirm'" style="display: none;">
-                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 font-sans tracking-tight">Set new password</h2>
-                <p class="text-gray-500 font-medium text-base">Please enter your new password twice to confirm.</p>
-            </div>
-
-            <!-- Header (Success) -->
-            <div class="mb-10 text-center md:text-left" x-show="mode === 'success'" style="display: none;">
-                <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                    <i data-lucide="check" class="w-6 h-6 text-emerald-600"></i>
-                </div>
-                <h2 class="text-3xl font-extrabold text-gray-900 mb-2 font-sans tracking-tight">
-                    {% if request.GET.reset_sent %}Email Sent{% else %}Password Reset{% endif %}
-                </h2>
-                <p class="text-gray-500 font-medium text-base">
-                    {% if request.GET.reset_sent %}
-                    We've sent instructions to your email. Please check your inbox and follow the link.
-                    {% else %}
-                    Your password has been successfully updated. You can now sign in with your new password.
-                    {% endif %}
+                
+                <h1 class="text-6xl lg:text-8xl font-black text-white tracking-tighter uppercase leading-[0.85] mb-8">
+                    Campus <br/> <span class="opacity-50 italic">Community.</span>
+                </h1>
+                
+                <p class="text-xl text-white/80 font-medium max-w-lg leading-relaxed mb-10">
+                    The official space for lost and found items. Helping our students stay connected and return what's missing.
                 </p>
             </div>
 
-            <!-- Login Form -->
-            <form method="post" action="{% url 'login' %}" class="space-y-6" x-show="mode === 'login'">
-                {% csrf_token %}
-
-                <!-- Display Errors -->
-                {% if form.errors and not validlink %}
-                <div class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-start gap-3">
-                    <i data-lucide="circle-alert" class="w-5 h-5 shrink-0 mt-0.5"></i>
-                    <div>
-                        {% if form.non_field_errors %}
-                            {{ form.non_field_errors|striptags }}
-                        {% else %}
-                            Please check your credentials and try again.
-                        {% endif %}
+            <!-- Status Indicators -->
+            <div class="flex items-center gap-8 border-t border-white/10 pt-10">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Platform Status</span>
+                    <div class="flex items-center gap-2 text-xs font-bold text-white">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#4ade80]"></span>
+                        All systems running
                     </div>
+                </div>
+                <div class="flex flex-col border-l border-white/10 pl-8">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Philosophy</span>
+                    <span class="text-xs font-bold text-white">Community First</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Panel (40%) -->
+    <div class="auth-form-side" x-data="{ submitting: false }">
+        <div class="auth-form-card">
+            <header class="mb-12">
+                <h2 class="text-4xl font-black text-secondary tracking-tighter uppercase mb-3">Welcome Back</h2>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Sign in to manage your reports.</p>
+            </header>
+
+            <form method="post" action="{% url 'login' %}" @submit="submitting = true" class="space-y-8">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="p-6 bg-red-50 border-2 border-red-100 rounded-2xl flex items-start gap-4 animate-shake">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 mt-0.5"></i>
+                    <p class="text-[11px] font-black text-red-600 uppercase tracking-widest leading-relaxed">
+                        Login failed: Please check your username and password and try again.
+                    </p>
                 </div>
                 {% endif %}
 
-                <!-- Username/Email Field -->
-                <div class="space-y-1.5 focus-within:text-gray-900 text-gray-500 transition-colors duration-200">
-                    <label for="id_username" class="block text-sm font-semibold text-gray-700">Username or Email</label>
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                <div class="space-y-6">
+                    <!-- Identity -->
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Username or Email</label>
+                        <div class="relative group">
+                            <i data-lucide="user" class="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors"></i>
+                            <input type="text" name="username" required 
+                                   class="input-field pl-14 h-14 bg-gray-50/50 border-gray-100 focus:bg-white transition-all shadow-inner" 
+                                   placeholder="Enter username or email" value="{{ form.username.value|default:'' }}">
                         </div>
-                        <input type="text" name="username" id="id_username" required autofocus placeholder="you@university.edu"
-                            class="block w-full !pl-11 !pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal"
-                            {% if form.username.value %}value="{{ form.username.value }}" {% endif %} />
+                    </div>
+
+                    <!-- Password -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center px-1">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500">Password</label>
+                            <a href="{% url 'password_reset' %}" class="text-[9px] font-black text-primary hover:text-secondary uppercase tracking-widest transition-all">Forgot password?</a>
+                        </div>
+                        <div class="relative group">
+                            <i data-lucide="lock" class="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors"></i>
+                            <input type="password" name="password" required 
+                                   class="input-field pl-14 h-14 bg-gray-50/50 border-gray-100 focus:bg-white transition-all shadow-inner" 
+                                   placeholder="••••••••">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Password Field -->
-                <div class="space-y-1.5 focus-within:text-gray-900 text-gray-500 transition-colors duration-200">
-                    <div class="flex items-center justify-between">
-                        <label for="id_password" class="block text-sm font-semibold text-gray-700">Password</label>
-                        <button type="button" @click="mode = 'forgot'"
-                            class="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">Forgot password?</button>
-                    </div>
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                        </div>
-                        <input :type="showPassword ? 'text' : 'password'" name="password" id="id_password" required placeholder="••••••••"
-                            class="block w-full !pl-11 !pr-11 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal" />
-
-                        <!-- Toggle Password Visibility -->
-                        <button type="button" @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                            <i data-lucide="eye" x-show="!showPassword" class="h-4 w-4"></i>
-                            <i data-lucide="eye-off" x-show="showPassword" class="h-4 w-4" style="display: none;"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit"
-                    class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors mt-8">
-                    Sign in
-                </button>
-            </form>
-
-            <!-- Forgot Password Form -->
-            <form action="{% url 'password_reset' %}" method="post" class="space-y-6" x-show="mode === 'forgot'" style="display: none;">
-                {% csrf_token %}
-
-                <div class="space-y-1.5 focus-within:text-gray-900 text-gray-500 transition-colors duration-200">
-                    <label for="id_email_reset" class="block text-sm font-semibold text-gray-700">Email address</label>
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-lucide="mail" class="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
-                        </div>
-                        <input type="email" name="email" id="id_email_reset" required placeholder="you@university.edu"
-                            class="block w-full !pl-11 !pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal" />
-                    </div>
-                </div>
-
-                <button type="submit"
-                    class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors mt-8">
-                    Send Reset Link
-                </button>
-
-                <div class="text-center">
-                    <button type="button" @click="mode = 'login'"
-                        class="text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
-                        Back to sign in
+                <!-- Action Hub -->
+                <div class="pt-4 flex flex-col gap-6">
+                    <button type="submit" class="h-14 bg-primary text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-secondary transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3" :disabled="submitting">
+                        <span x-show="!submitting" class="flex items-center gap-3">
+                            <span>Sign In</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </span>
+                        <span x-show="submitting" class="flex items-center gap-3">
+                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                            <span>Signing you in...</span>
+                        </span>
                     </button>
-                </div>
-            </form>
 
-            <!-- Reset Confirm Form -->
-            {% if validlink %}
-            <form method="post" action="{% url 'password_reset_confirm' uidb64=uidb64 token=token %}" class="space-y-6" x-show="mode === 'confirm'">
-                {% csrf_token %}
-                
-                {% for field in form %}
-                <div class="space-y-1.5 focus-within:text-gray-900 text-gray-500 transition-colors duration-200">
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ field.label }}</label>
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i data-lucide="lock" class="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 border-b border-gray-50 pb-6">
+                            New here?
+                        </p>
+                        <div class="flex items-center justify-center gap-4">
+                            <a href="{% url 'signup' %}" class="flex-1 h-12 border-2 border-gray-100 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-gray-500 hover:border-primary hover:text-primary transition-all">Create Account</a>
+                            <a href="{% url 'admin_login' %}" class="px-6 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-secondary transition-all" title="Admin Login">
+                                <i data-lucide="shield" class="w-4 h-4"></i>
+                            </a>
                         </div>
-                        <input type="password" name="{{ field.html_name }}" id="{{ field.id_for_label }}" required 
-                            class="block w-full !pl-11 !pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium placeholder:text-gray-400 placeholder:font-normal" />
                     </div>
-                    {% if field.errors %}
-                        <p class="text-red-500 text-xs mt-1 font-medium">{{ field.errors|striptags }}</p>
-                    {% endif %}
                 </div>
-                {% endfor %}
-
-                <button type="submit"
-                    class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors mt-8">
-                    Reset Password
-                </button>
             </form>
-            {% elif validlink is False %}
-            <div class="bg-red-50 text-red-600 p-6 rounded-xl text-center" x-show="mode === 'confirm'">
-                <i data-lucide="x-circle" class="w-10 h-10 mx-auto mb-3 text-red-500"></i>
-                <h3 class="font-bold text-lg mb-1">Invalid Link</h3>
-                <p class="text-sm">The password reset link was invalid, possibly because it has already been used or has expired.</p>
-                <div class="mt-6">
-                    <button @click="mode = 'forgot'" class="text-sm font-bold text-gray-900 hover:underline">Request a new link</button>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Success Link Back -->
-            <div class="mt-8 text-center" x-show="mode === 'success'" style="display: none;">
-                <button @click="mode = 'login'"
-                    class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
-                    Back to Sign In
-                </button>
-            </div>
-
-            <!-- Divider (Shared) -->
-            <div class="mt-8 relative" x-show="mode === 'login'">
-                <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div class="w-full border-t border-gray-200"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-4 bg-white text-gray-400 font-medium">or</span>
-                </div>
-            </div>
-
-            <!-- Footer Links (Login Only) -->
-            <div class="mt-8 text-center" x-show="mode === 'login'">
-                <p class="text-sm text-gray-500 font-medium">
-                    Don't have an account?
-                    <a href="{% url 'signup' %}"
-                        class="font-bold text-gray-900 hover:text-indigo-600 transition-colors underline decoration-gray-300 underline-offset-4 hover:decoration-indigo-600">Create one</a>
-                </p>
-
-                <div class="mt-12">
-                    <a href="{% url 'admin_login' %}"
-                        class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors">
-                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin Portal Access
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>

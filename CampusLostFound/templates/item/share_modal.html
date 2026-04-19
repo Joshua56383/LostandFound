@@ -1,0 +1,158 @@
+<div x-show="shareModalOpen" class="relative z-[3000]" x-cloak>
+    <!-- Background backdrop architecture -->
+    <div x-show="shareModalOpen"
+         x-transition:enter="transition-opacity ease-out duration-500"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-primary/20 backdrop-blur-xl"
+         @click="shareModalOpen = false"></div>
+
+    <div class="fixed inset-0 z-[3001] overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-6 text-center sm:p-0">
+            <div x-show="shareModalOpen"
+                 x-transition:enter="transition-all ease-out duration-500"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-10"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition-all ease-in duration-300"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-10"
+                 class="relative transform overflow-hidden rounded-[2.5rem] bg-white text-left shadow-massive transition-all sm:my-8 sm:w-full sm:max-w-md w-full border border-white/40"
+                 x-data="{ 
+                     absoluteUrl: '',
+                     copied: false,
+                     initQR() {
+                         const rawUrl = this.shareData.url || window.location.pathname;
+                         // Prioritize the hardcoded site_url for sharing consistency
+                         const baseOrigin = '{{ site_url }}'.replace(/\/$/, '') || window.location.origin;
+                         this.absoluteUrl = baseOrigin + rawUrl;
+                         const qrContainer = document.getElementById('qr-code-canvas');
+                         if (!qrContainer) return;
+                         qrContainer.innerHTML = '';
+                         try {
+                             if (typeof QRCode !== 'undefined') {
+                                 new QRCode(qrContainer, {
+                                     text: this.absoluteUrl,
+                                     width: 180,
+                                     height: 180,
+                                     colorDark : '#5842e5',
+                                     colorLight : '#ffffff',
+                                     correctLevel : QRCode.CorrectLevel.H
+                                 });
+                             }
+                         } catch(e) { console.error('QR library error', e); }
+                     },
+                     copyToClipboard() {
+                         if (!this.absoluteUrl) return;
+                         navigator.clipboard.writeText(this.absoluteUrl);
+                         this.copied = true;
+                         setTimeout(() => this.copied = false, 2000);
+                     },
+                     downloadQR() {
+                         const canvas = document.querySelector('#qr-code-canvas canvas');
+                         if(!canvas) return;
+                         const url = canvas.toDataURL('image/png');
+                         const a = document.createElement('a');
+                         const safeTitle = this.shareData.title ? this.shareData.title.replace(/\s+/g, '_') : 'Item';
+                         a.download = 'QR_' + safeTitle + '.png'; a.href = url; a.click();
+                     }
+                 }"
+                 x-effect="if(shareModalOpen) { setTimeout(() => initQR(), 200); }">
+                 
+                <!-- High-Fidelity Header Section -->
+                <div class="px-8 py-8 border-b border-border flex items-center justify-between bg-slate-50/50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-black text-text-main flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg transform -rotate-6">
+                                <i data-lucide="share-2" class="w-5 h-5"></i>
+                            </div>
+                            <span>Broadcast Hub</span>
+                        </h3>
+                        <p class="text-[10px] font-black text-text-light uppercase tracking-[0.2em] mt-2 opacity-60" x-text="shareData.title"></p>
+                    </div>
+                    <button @click="shareModalOpen = false" class="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-border text-text-light hover:text-danger hover:border-danger/20 transition-all hover:rotate-90">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    <!-- Social Protocol Grid -->
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase text-text-light tracking-[0.2em] mb-4">Propagation Channels</h4>
+                        <div class="grid grid-cols-4 gap-4">
+                            <!-- Facebook -->
+                            <a :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(absoluteUrl)" target="_blank" class="flex flex-col items-center gap-2 group">
+                                <div class="w-14 h-14 rounded-2xl bg-[#1877F2]/10 flex items-center justify-center group-hover:bg-[#1877F2] group-hover:shadow-lg group-hover:shadow-[#1877F2]/30 transition-all duration-300">
+                                    <i class="fa-brands fa-facebook text-[#1877F2] text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-text-light group-hover:text-text-main transition-colors">Facebook</span>
+                            </a>
+                            <!-- Messenger -->
+                            <a :href="'fb-messenger://share/?link=' + encodeURIComponent(absoluteUrl)" target="_blank" class="flex flex-col items-center gap-2 group">
+                                <div class="w-14 h-14 rounded-2xl bg-[#00B2FF]/10 flex items-center justify-center group-hover:bg-[#00B2FF] group-hover:shadow-lg group-hover:shadow-[#00B2FF]/30 transition-all duration-300">
+                                    <i class="fa-brands fa-facebook-messenger text-[#00B2FF] text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-text-light group-hover:text-text-main transition-colors">Messenger</span>
+                            </a>
+                            <!-- WhatsApp -->
+                            <a :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent('Found on DMMMSU Registry: ' + shareData.title + ' ') + encodeURIComponent(absoluteUrl)" target="_blank" class="flex flex-col items-center gap-2 group">
+                                <div class="w-14 h-14 rounded-2xl bg-[#25D366]/10 flex items-center justify-center group-hover:bg-[#25D366] group-hover:shadow-lg group-hover:shadow-[#25D366]/30 transition-all duration-300">
+                                    <i class="fa-brands fa-whatsapp text-[#25D366] text-2xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-text-light group-hover:text-text-main transition-colors">WhatsApp</span>
+                            </a>
+                            <!-- X (Twitter) -->
+                            <a :href="'https://twitter.com/intent/tweet?url=' + encodeURIComponent(absoluteUrl) + '&text=' + encodeURIComponent('Asset Located: ' + shareData.title + ' via Campus Registry!')" target="_blank" class="flex flex-col items-center gap-2 group">
+                                <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center group-hover:bg-black group-hover:shadow-lg group-hover:shadow-black/20 transition-all duration-300">
+                                    <i class="fa-brands fa-x-twitter text-text-main text-xl group-hover:text-white transition-colors"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-text-light group-hover:text-text-main transition-colors">X</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-100"></div>
+
+                    <!-- Direct Metadata Link -->
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase text-text-light tracking-[0.2em] mb-4">Operational Link</h4>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-slate-50 border border-border rounded-2xl px-5 py-4 text-xs font-bold text-text-main truncate select-all overflow-hidden shadow-inner" x-text="absoluteUrl"></div>
+                            <button @click="copyToClipboard()" class="h-14 px-6 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-2 shadow-premium shrink-0 group">
+                                <i data-lucide="copy" class="w-4 h-4 transition-transform group-hover:scale-110" x-show="!copied"></i>
+                                <i data-lucide="check-circle" class="w-4 h-4 text-white animate-bounce" x-show="copied"></i>
+                                <span x-text="copied ? 'Registry Saved' : 'Copy'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-100"></div>
+
+                    <!-- QR Visualization Layer -->
+                    <div>
+                         <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h4 class="text-[10px] font-black uppercase text-text-light tracking-[0.2em]">Visual Token (QR)</h4>
+                                <p class="text-[11px] text-text-light font-medium mt-1">Distribute for offline asset tracing.</p>
+                            </div>
+                             <button @click="downloadQR()" class="px-5 py-2.5 bg-slate-100 text-text-main hover:bg-secondary hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 active:scale-95 group">
+                                <i data-lucide="download" class="w-4 h-4 transition-transform group-hover:translate-y-0.5"></i> Export
+                            </button>
+                        </div>
+                        
+                        <div class="flex justify-center bg-slate-50 border border-border rounded-[2rem] p-8 shadow-inner relative group">
+                            <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]"></div>
+                            <div id="qr-code-canvas" class="bg-white p-5 rounded-[2rem] shadow-premium border border-border relative z-10 transition-transform group-hover:scale-105 duration-500">
+                                <!-- Dynamic QR Render Interface -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,21 @@
+{% comment %} 
+    🎓 Unified Card Component
+    Usage: 
+    {% include 'includes/components/card.html' with type="premium" %}
+        Card content here
+    {% endinclude %}
+{% endcomment %}
+
+<div class="card {% if type == 'premium' %}card-premium{% elif type == 'stat' %}card-stat{% elif type == 'activity' %}card-activity{% endif %} {{ class }}" {{ attrs|safe }}>
+    {{ icon_html|safe }}
+    {% if title or subtitle %}
+        <header class="card-header {% if title_class %}{{ title_class }}{% endif %}">
+            {% if title %}<h3 class="card-title">{{ title }}</h3>{% endif %}
+            {% if subtitle %}<p class="card-subtitle">{{ subtitle }}</p>{% endif %}
+        </header>
+    {% endif %}
+    
+    <div class="card-body">
+        {% block card_content %}{% endblock %}
+    </div>
+</div>

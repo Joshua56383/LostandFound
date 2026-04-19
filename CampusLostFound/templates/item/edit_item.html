@@ -1,0 +1,329 @@
+{% extends base_template|default:'base.html' %}
+{% load static %}
+
+{% block title %}Update Record - {{ item.name }}{% endblock %}
+
+{% block breadcrumbs %}
+{% if base_template == 'base.html' %}
+<span class="breadcrumb-separator">/</span>
+<a href="{% url 'items:item_list' %}" class="hover:text-primary transition-colors">Browse</a>
+<span class="breadcrumb-separator">/</span>
+<span class="breadcrumb-active">Update Record</span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="w-full relative pt-6" x-data="reportingForm()" x-init="init()">
+    
+    <!-- Header mirroring add_item -->
+    <div class="px-10 pt-10 pb-4 text-center">
+        <!-- Integrated Close Button -->
+        <button @click="closeModal()" class="absolute right-6 top-6 w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-gray-100 text-gray-400 hover:text-secondary transition-all">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Dynamic Header -->
+        <h1 class="text-3xl font-black tracking-tight mb-2">Update {{ item.report_type|title }} Item</h1>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-primary opacity-60 mb-8">Refining details for Record #{{ item.id|stringformat:"05d" }}</p>
+    </div>
+        
+    <form method="POST" action="{% url 'items:edit_item' item.id %}" enctype="multipart/form-data" id="report-form" @submit="handleFormSubmit($event)" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="report_type" :value="currentStatus">
+
+        <div class="px-10 pb-10">
+            <!-- STEP 1: ITEM IDENTITY -->
+            <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+                
+                <!-- Status & Lifecycle Switcher (Added for Edit Mode) -->
+                <div class="p-6 bg-slate-50 border border-slate-200 rounded-3xl grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label-premium text-[9px]">REPORT TYPE</label>
+                        <div class="flex bg-white p-1 rounded-2xl border border-slate-100 mt-2">
+                            <button type="button" @click="currentStatus = 'lost'" :class="currentStatus === 'lost' ? 'bg-danger text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Lost</button>
+                            <button type="button" @click="currentStatus = 'found'" :class="currentStatus === 'found' ? 'bg-success text-white shadow-md' : 'text-slate-400'" class="flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Found</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label-premium text-[9px]">REPORT PHASE</label>
+                        <div class="relative mt-2">
+                            <select name="lifecycle_status" x-model="lifecycle" class="w-full bg-white border border-slate-100 rounded-2xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-primary appearance-none focus:ring-0 cursor-pointer">
+                                <option value="active">Active (Searchable)</option>
+                                <option value="claimed">Claimed (Pending Transfer)</option>
+                                <option value="resolved">Resolved (Returned)</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label-premium">ITEM NAME *</label>
+                    <input type="text" name="name" required 
+                           class="input-field placeholder-gray-300" 
+                           placeholder="e.g., Blue Backpack or Keys" 
+                           value="{{ item.name }}">
+                </div>
+
+                <div>
+                    <label class="form-label-premium">DESCRIPTION *</label>
+                    <textarea name="description" rows="3" required
+                              class="input-field placeholder-gray-300 resize-none" 
+                              placeholder="Provide detailed description">{{ item.description }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <label class="form-label-premium">CATEGORY *</label>
+                        <div class="relative" x-data="{ open: false }">
+                            <input type="text" 
+                                   x-model="categorySearch"
+                                   @focus="open = true"
+                                   @click.away="open = false"
+                                   @input="open = true"
+                                   class="input-field py-3 pr-12 text-xs font-bold uppercase tracking-tight" 
+                                   placeholder="Search Categories...">
+                                   
+                            <i data-lucide="chevron-down" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            <input type="hidden" name="category" :value="selectedCategory" required>
+
+                            <div x-show="open" x-transition
+                                 class="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-100 rounded-2xl shadow-massive z-[60] p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                <template x-for="cat in filteredCategories" :key="cat">
+                                    <button type="button" 
+                                            @click="selectedCategory = cat; categorySearch = cat; open = false"
+                                            class="w-full text-left px-5 py-3 rounded-xl hover:bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-secondary transition-all flex items-center justify-between group">
+                                        <span x-text="cat"></span>
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" x-show="selectedCategory === cat"></i>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label-premium uppercase">Color / Brand / Unique ID</label>
+                        <input type="text" name="serial_number" class="input-field text-xs font-bold" value="{{ item.serial_number|default:'' }}" placeholder="e.g. Red, iPhone 14, etc.">
+                    </div>
+                </div>
+
+                <!-- Money Details -->
+                <div x-show="['Wallet / Money', 'Currency'].includes(selectedCategory)" x-transition class="p-6 bg-amber-50/50 border border-amber-100 rounded-3xl space-y-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                            <i data-lucide="banknote" class="w-4 h-4"></i>
+                        </div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-amber-700">Money Details</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-[9px] font-black text-amber-800/60 uppercase tracking-widest mb-1 block">Total Amount</label>
+                            <input type="number" name="amount" step="0.01" value="{{ item.amount|default:'0.00' }}" class="input-field bg-white" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-black text-amber-800/60 uppercase tracking-widest mb-1 block">Denominations</label>
+                            <input type="text" name="denominations" value="{{ item.denominations|default:'' }}" class="input-field bg-white" placeholder="e.g., 2x $50, 1x $20">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <section class="space-y-4 pt-4 border-t border-gray-100">
+                    <label class="form-label-premium text-[11px]">LOCATION REFINEMENT *</label>
+                    <div class="bg-gray-50/50 rounded-2xl p-2 border border-gray-100 shadow-inner">
+                        <div class="grid grid-cols-2 gap-1 mb-2">
+                            <button type="button" @click="locationTab = 'campus'" :class="locationTab === 'campus' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Campus Building</button>
+                            <button type="button" @click="locationTab = 'custom'" :class="locationTab === 'custom' ? 'bg-white text-secondary shadow-sm' : 'text-gray-400'" class="py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">Specific Spot</button>
+                        </div>
+
+                        <div x-show="locationTab === 'campus'" class="space-y-3 px-1">
+                            <div class="relative">
+                                <input type="text" x-model="locationSearch" class="input-field py-2.5 text-xs pr-12 bg-white/80" placeholder="Search buildings...">
+                                <i data-lucide="search" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
+                            </div>
+                            <div class="max-h-[160px] overflow-y-auto space-y-1 pb-2 custom-scrollbar">
+                                <template x-for="loc in filteredLocations" :key="loc">
+                                    <button type="button" @click="selectLocation(loc)" 
+                                            class="w-full text-left px-4 py-2.5 rounded-xl text-[11px] font-bold text-gray-500 hover:bg-white hover:text-secondary transition-all flex items-center gap-3">
+                                        <div class="w-1.5 h-1.5 rounded-full border-2 border-gray-200" :class="selectedLocation === loc ? 'border-secondary bg-secondary' : ''"></div>
+                                        <span x-text="loc"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div x-show="locationTab === 'custom'" x-cloak class="px-1 pb-2">
+                            <input type="text" x-model="selectedLocation" class="input-field text-xs bg-white/80 border-secondary/20" placeholder="e.g. Near the main entrance, cafeteria table, etc.">
+                        </div>
+                    </div>
+                    <input type="hidden" name="location" :value="selectedLocation" required>
+                    <div class="flex items-center gap-2 px-1" x-show="selectedLocation">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-secondary"></i>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-secondary" x-text="selectedLocation"></span>
+                    </div>
+                </section>
+
+                <!-- Date -->
+                <div class="pt-2">
+                    <label class="form-label-premium">ESTIMATED DATE & TIME *</label>
+                    <div class="relative">
+                        <input type="datetime-local" name="discovery_date" required 
+                               class="input-field py-4 text-xs font-bold text-secondary uppercase tracking-tight bg-slate-50/50"
+                               value="{{ item.discovery_date|date:'Y-m-d\TH:i' }}">
+                        <i data-lucide="calendar" class="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- STEP 2: PHOTO & CONTACT -->
+            <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+                <div>
+                    <label class="form-label-premium text-[11px]">REPLACE PHOTO (OPTIONAL)</label>
+                    <div class="relative group" x-data="{ filename: '' }">
+                        <input type="file" name="image" id="item_image_edit" class="hidden" accept="image/*"
+                               @change="filename = $event.target.files[0].name">
+                        <label for="item_image_edit" class="input-field flex flex-col items-center justify-center cursor-pointer border-dashed border-2 border-slate-200 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all min-h-[160px] text-center p-6">
+                            {% if item.image %}
+                                <div class="relative mb-4">
+                                    <img src="{{ item.image.url }}" class="w-20 h-20 rounded-2xl object-cover shadow-lg border-4 border-white">
+                                    <div class="absolute -right-2 -top-2 w-6 h-6 bg-secondary text-white rounded-full flex items-center justify-center shadow-md">
+                                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+                                    <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+                                </div>
+                            {% endif %}
+                            <span class="text-xs font-black text-secondary tracking-widest uppercase" x-text="filename || 'Click to change or replace photo'"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="form-label-premium">CONTACT NAME</label>
+                        <input type="text" name="contact_name" class="input-field text-xs font-bold" value="{{ item.contact_name|default:'' }}">
+                    </div>
+                    <div>
+                        <label class="form-label-premium">CONTACT EMAIL</label>
+                        <input type="email" name="contact_email" class="input-field text-xs font-bold" value="{{ item.contact_email|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50/50 border border-indigo-100 rounded-3xl p-6 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                        </div>
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-700">Modification Note</h4>
+                    </div>
+                    <p class="text-[10px] font-bold text-indigo-800/70 leading-relaxed">
+                        Updating these details will automatically inform anyone with an active claim on this item about the changes to ensure transparency.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unified Action Bar -->
+        <footer class="px-10 py-8 bg-gray-50/50 flex justify-between items-center border-t border-gray-100 rounded-b-[32px]">
+            <div>
+                <button type="button" x-show="step > 1" @click="step--" class="h-12 px-8 rounded-full bg-white border-2 border-slate-200 text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-secondary hover:border-secondary transition-all flex items-center gap-2">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    <span>Back</span>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button type="button" @click="{% if base_template == 'base.html' %}window.history.back(){% else %}closeModal(){% endif %}" 
+                        class="h-12 px-6 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-danger hover:underline transition-all">Discard Changes</button>
+                
+                <button type="button" x-show="step < 2" @click="validateAndNext()" class="h-12 px-10 rounded-full bg-secondary text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg flex items-center gap-2">
+                    <span>Continue</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+
+                <button type="submit" x-show="step === 2" class="h-12 px-12 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 flex items-center justify-center whitespace-nowrap" :disabled="submitting">
+                    <span x-show="!submitting">Apply Final Updates</span>
+                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin" x-show="submitting"></i>
+                </button>
+            </div>
+        </footer>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+    window.reportingForm = function() {
+        return {
+            step: 1,
+            currentStatus: '{{ item.report_type|escapejs }}',
+            lifecycle: '{{ item.lifecycle_status|escapejs }}',
+            locationTab: 'campus',
+            locationSearch: '',
+            selectedLocation: '{{ item.location|escapejs }}',
+            categorySearch: '{{ item.category|escapejs }}',
+            selectedCategory: '{{ item.category|escapejs }}',
+            submitting: false,
+            campusLocations: [
+                'Administration Building', 'Main Library', 'Student Center', 'CET Building', 
+                'CAS Building', 'CET / Engineering Laboratory', 'JICA Building / JICA-Assisted Facility',
+                'Eco-Park / Campus Park Area', 'Experimental Farm', 'Open Field / Sports Complex',
+                'University Infirmary', 'Computer Center', 'Research & Extension Office'
+            ],
+            categories: [
+                'Phone / Electronics', 'ID / School ID', 'Wallet / Money', 
+                'Books / Notebook', 'Bag / Purse', 'Keys', 'Clothing / Accessory',
+                'Laboratory Equipment', 'Sports Gear', 'Other Items'
+            ],
+            
+            init() {
+                if (window.lucide) {
+                    setTimeout(() => lucide.createIcons(), 50);
+                }
+                // Determine location tab based on if existing location is in campus list
+                if (this.campusLocations.includes(this.selectedLocation)) {
+                    this.locationTab = 'campus';
+                } else {
+                    this.locationTab = 'custom';
+                }
+            },
+            
+            get filteredLocations() {
+                if (!this.locationSearch) return this.campusLocations;
+                return this.campusLocations.filter(loc => loc.toLowerCase().includes(this.locationSearch.toLowerCase()));
+            },
+
+            get filteredCategories() {
+                if (!this.categorySearch) return this.categories;
+                return this.categories.filter(cat => cat.toLowerCase().includes(this.categorySearch.toLowerCase()));
+            },
+
+            selectLocation(loc) {
+                this.selectedLocation = loc;
+                this.locationSearch = loc;
+            },
+
+            validateAndNext() {
+                const form = document.getElementById('report-form');
+                if (this.step === 1) {
+                    const name = form.querySelector('[name=name]').value;
+                    const desc = form.querySelector('[name=description]').value;
+                    if (!name || !desc || !this.selectedCategory || !this.selectedLocation) {
+                        window.showToast('Please verify all required fields.', 'error');
+                        return;
+                    }
+                }
+                this.step++;
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            },
+
+            handleFormSubmit(e) {
+                this.submitting = true;
+            }
+        }
+    }
+</script>
+{% endblock %}

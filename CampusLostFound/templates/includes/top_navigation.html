@@ -1,0 +1,29 @@
+<nav class="h-16 bg-white/40 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-40 sticky top-0">
+    <div class="flex items-center gap-6">
+        <!-- Sidebar Toggle (Desktop/Mobile) -->
+        <button @click="sidebarOpen = !sidebarOpen" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-primary transition-all shadow-sm group">
+            <i data-lucide="menu" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+        </button>
+
+        <!-- Breadcrumbs -->
+        <div class="breadcrumb-trail hidden sm:flex">
+            <a href="{% url 'items:dashboard' %}" class="breadcrumb-item">Home</a>
+            <i data-lucide="chevron-right" class="breadcrumb-separator w-3 h-3"></i>
+            <span class="text-gray-900 font-black">
+                {% if request.resolver_match.url_name == 'dashboard' %}Overview
+                {% elif request.resolver_match.url_name == 'item_list' %}Browse Items
+                {% elif request.resolver_match.url_name == 'inbox' %}Inbox
+                {% elif request.resolver_match.url_name == 'profile' %}Profile
+                {% elif request.resolver_match.url_name == 'my_activity' %}Activity
+                {% else %}{{ request.resolver_match.url_name|title }}{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+        <!-- Search is now unified in the sidebar -->
+        
+        <!-- Notifications Panel Integration -->
+        {% include 'components/notifications_panel.html' with notifications=user.notifications.all unread_count=user.userprofile.unread_notification_count position='right' %}
+    </div>
+</nav>
